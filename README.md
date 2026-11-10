@@ -271,6 +271,18 @@ curl -X POST http://127.0.0.1:8080/api/v1/files/upload \
 > 数据库、对象存储、搜索三样都要当场点「测试连接」通过，才会写配置并启动，
 > 避免出现"看起来装好了、其实连不上库"的假成功。
 
+**拿现成的包（推荐，不用装 Go）**：
+
+```bash
+wget https://github.com/AL086/ALab/releases/download/v1.0.0/blog-server-linux-amd64.tar.gz
+tar -xzf blog-server-linux-amd64.tar.gz && cd blog-server-linux-amd64
+./install.sh --check          # 只体检，不写任何东西
+sudo ./install.sh             # 装依赖 + 起服务
+```
+
+Release 页：<https://github.com/AL086/ALab/releases/tag/v1.0.0>
+（同一个 Release 里还有 `sha256.txt` 可以核对）。
+
 ### 需要哪些软件
 
 | 软件 | 版本 | 作用 | 是否必须 | 拿不到时 |
