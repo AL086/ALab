@@ -1,0 +1,19 @@
+[Unit]
+Description=blog-server (Go + Gin, PostgreSQL + MinIO + Meilisearch)
+After=network-online.target postgresql.service minio.service meilisearch.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kb/app
+# 首次部署还没有 .env，用 `-` 前缀让 systemd 别因此拒绝启动
+EnvironmentFile=-/opt/kb/app/.env
+# 这个模板给 deploy.py 用（二进制名 /opt/kb/app/server，沿用既有部署）；
+# 一键安装 deploy/install.sh 会另外生成自己的单元（二进制名 blog-server，带 -env/-install-hints）
+ExecStart=/opt/kb/app/server
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

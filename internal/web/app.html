@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博客后台 · blog-server</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%233b5d7a'/%3E%3Cpath d='M6 8h12M6 12h8M6 16h10' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#1f2933; --muted:#5f6b77; --line:#dfe4ea; --bg:#f6f7f9; --card:#fff;
+  --brand:#3b5d7a; --brand-soft:#e8eef4; --warn:#a35a1f; --ok:#2f6b4f; --danger:#9b2c2c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font:15px/1.6 "Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  color:var(--ink); background:var(--bg);
+}
+a{color:var(--brand)}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.layout{display:grid;grid-template-columns:1fr;min-height:100vh}
+.sidebar{background:var(--card);border-bottom:1px solid var(--line);padding:14px 16px}
+.brand{font-weight:600;font-size:16px;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+.brand small{font-weight:400;color:var(--muted);font-size:12px}
+.nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.nav button{
+  background:transparent;border:1px solid transparent;border-radius:6px;
+  padding:7px 12px;color:var(--muted);min-height:38px
+}
+.nav button:hover{background:var(--bg);color:var(--ink)}
+.nav button.on{background:var(--brand-soft);color:var(--brand);border-color:#cddbe7;font-weight:600}
+.main{padding:18px 16px 48px;min-width:0}
+.wrap{max-width:1040px;margin:0 auto}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;margin-bottom:16px}
+h1{font-size:20px;margin:0;font-weight:600}
+h2{font-size:16px;margin:22px 0 10px;font-weight:600}
+.hint{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row > *{min-width:0}
+.grow{flex:1 1 220px}
+.btn{
+  border:1px solid var(--line);background:#fff;border-radius:6px;padding:8px 14px;min-height:38px
+}
+.btn:hover{border-color:#b9c6d3}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#32506a}
+.btn.ghost{background:transparent}
+.btn.sm{padding:5px 10px;min-height:32px;font-size:13px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+label.f{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+input[type=text],input[type=password],input[type=search],select,textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:16px
+}
+textarea{min-height:320px;line-height:1.7;font-family:Consolas,"Cascadia Mono",monospace;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:2px solid #cddbe7;outline-offset:1px;border-color:#b9c6d3}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;
+  overflow-wrap:anywhere}
+th{font-size:13px;color:var(--muted);font-weight:600}
+tbody tr:hover{background:#fafbfc}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);
+  color:var(--muted);background:#fff;margin:0 4px 4px 0}
+.pill.ok{color:var(--ok);border-color:#c9ddd3;background:#f2f8f4}
+.pill.warn{color:var(--warn);border-color:#e6d5c2;background:#fbf4ea}
+.pill.brand{color:var(--brand);border-color:#cddbe7;background:var(--brand-soft)}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:14px}
+.err{color:var(--danger);font-size:13px;margin-top:8px;white-space:pre-wrap}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  background:#243442;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;
+  max-width:min(90vw,520px);opacity:0;pointer-events:none;transition:opacity .18s
+}
+.toast.on{opacity:1}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
+.crumbs button{background:none;border:0;padding:2px;color:var(--brand);min-height:32px}
+.bread-sep{color:#b0bac4}
+.progress{height:6px;background:#e6ebf0;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress > i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+dialog{border:1px solid var(--line);border-radius:10px;padding:0;max-width:min(94vw,520px);width:100%}
+dialog::backdrop{background:rgba(31,41,51,.35)}
+.dlg-head{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.dlg-body{padding:16px}
+.dlg-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.tree{list-style:none;margin:0;padding:0}
+.tree li{padding:7px 0;border-bottom:1px dashed var(--line);display:flex;gap:10px;align-items:center}
+.tree li:last-child{border-bottom:0}
+.tree .indent{display:inline-block;width:18px;color:#9aa6b2}
+.mono{font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;color:var(--muted)}
+.split{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:860px){
+  .layout{grid-template-columns:224px 1fr}
+  .sidebar{border-bottom:0;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;
+    display:flex;flex-direction:column}
+  .nav{flex-direction:column;margin-top:18px;gap:4px}
+  .nav button{text-align:left;justify-content:flex-start}
+  .main{padding:26px 28px 64px}
+  .split{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+  .side-foot{margin-top:auto}
+}
+.side-foot{font-size:12px;color:var(--muted);padding-top:14px}
+.file-icon{width:18px;height:18px;flex:0 0 18px;fill:#9aa6b2}
+.file-icon.dir{fill:var(--brand)}
+td .row{gap:6px}
+/* ---- 文件表：紧凑行 + 常用操作露在外面、其余收进"更多"抽屉 ---- */
+.filetable{font-size:13.5px}
+.filetable th{padding:7px 8px}
+.filetable tbody td{padding:6px 8px;vertical-align:middle}
+.filetable .name-line{display:flex;align-items:center;gap:7px;min-width:0}
+.filetable .name-line > a,.filetable .name-line > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filetable .sub{font-size:11.5px;color:#8a949e;margin-top:1px;line-height:1.35}
+.filetable .ops{display:flex;gap:5px;flex-wrap:nowrap;justify-content:flex-end;align-items:center}
+.filetable .ops .btn{white-space:nowrap;padding:5px 9px;font-size:12.5px;min-height:28px}
+.rowmenu{position:fixed;z-index:80;min-width:132px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;box-shadow:0 10px 26px rgba(20,40,60,.16);padding:4px}
+.rowmenu button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;
+  font-size:13px;border-radius:6px;cursor:pointer;color:var(--ink)}
+.rowmenu button:hover{background:#f1f5f7}
+.rowmenu button.danger{color:var(--danger)}
+.rowmenu button.danger:hover{background:#fdf1f0}
+.rowmenu .sep{height:1px;background:var(--line);margin:4px 2px}
+/* 批量选择 */
+.selbar{align-items:center;gap:8px;margin:0 0 10px}
+.selbar #selCount{min-width:150px}
+td.selcell{width:36px;padding-right:0}
+input[type="checkbox"]{width:16px;height:16px;accent-color:#2c5a58;cursor:pointer;vertical-align:middle}
+tr.sel{background:#f2f8f7}
+#selAll{margin:0}
+
+/* 在线编辑：md 一律左写右预览（不等到 980px 才并排），其他文本单栏 */
+.fedit{display:grid;grid-template-columns:1fr;gap:14px}
+.fedit.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:stretch}
+.fedit textarea{min-height:56vh;height:56vh;resize:vertical;background:#fff}
+.fedit.two textarea{min-height:64vh;height:64vh;min-width:0}
+.md-body{
+  border:1px solid var(--line);border-radius:8px;background:#fff;padding:16px 18px;
+  min-height:56vh;max-height:72vh;overflow:auto;font-size:14.5px;line-height:1.75;overflow-wrap:anywhere
+}
+.fedit.two .md-body{min-height:64vh;height:64vh;max-height:none;min-width:0}
+.pane{display:flex;flex-direction:column;min-width:0;gap:6px}
+.pane-h{font-size:12.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px}
+.pane-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.fedit.two textarea{font-family:Consolas,"Cascadia Mono","Microsoft YaHei",monospace}
+.fedit.two textarea.drop-on{border-color:var(--brand);background:#f2f9f8}
+.md-body > :first-child{margin-top:0}
+.md-body h1{font-size:22px;margin:18px 0 10px}
+.md-body h2{font-size:18px;margin:18px 0 8px}
+.md-body h3{font-size:16px;margin:16px 0 6px}
+.md-body h4,.md-body h5,.md-body h6{font-size:15px;margin:14px 0 6px}
+.md-body p{margin:0 0 10px}
+.md-body ul,.md-body ol{margin:0 0 10px;padding-left:22px}
+.md-body li{margin:2px 0}
+.md-body code{background:#f1f4f7;border-radius:3px;padding:1px 5px;
+  font-family:Consolas,"Cascadia Mono",monospace;font-size:13px}
+.md-body pre{background:#f1f4f7;border:1px solid var(--line);border-radius:6px;
+  padding:12px;overflow:auto;margin:0 0 12px}
+.md-body pre code{background:none;padding:0}
+.md-body blockquote{border-left:3px solid #cddbe7;margin:0 0 12px;padding:2px 0 2px 12px;color:var(--muted)}
+.md-body hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.md-body table{table-layout:auto;margin:0 0 12px}
+.md-body th,.md-body td{border:1px solid var(--line);padding:6px 8px}
+.md-body img{max-width:100%;height:auto;border-radius:4px}
+.img-miss{border:1px dashed #d9c9c4;border-radius:6px;background:#fbf6f5;color:#a05a4d;
+  padding:8px 10px;font-size:12.5px;margin:0 0 10px}
+.md-body a{color:var(--brand)}
+.fmeta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;color:var(--muted);font-size:13px}
+.fmeta .dirty{color:var(--danger);font-weight:600}
+@media (max-width:820px){
+  /* 窄屏仍然并排，只把字号和内边距收一点，避免两栏挤成一条 */
+  .fedit.two{gap:8px}
+  .fedit.two textarea{font-size:13px;padding:10px}
+  .fedit.two .md-body{padding:10px 12px;font-size:13.5px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#3b5d7a"></rect><path d="M6 8h12M6 12h8M6 16h10" stroke="#fff" stroke-width="2" stroke-linecap="round"></path></svg>
+      <span>博客后台<br><small>blog-server</small></span>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="posts">文章</button>
+      <button data-view="files">文件仓库</button>
+      <button data-view="terms">分类与标签</button>
+      <button data-view="search">搜索</button>
+      <button data-view="ops">运维</button>
+      <button type="button" onclick="location.href='/'">去前台页面</button>
+    </nav>
+    <div class="side-foot" id="who">未登录</div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap" id="stage"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="dlg">
+  <div class="dlg-head" id="dlgTitle">登录</div>
+  <div class="dlg-body" id="dlgBody"></div>
+  <div class="dlg-foot" id="dlgFoot"></div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ================= 基础工具 ================= */
+const API = "/api/v1";
+const LS_KEY = "kb.token";
+
+const state = {
+  token: localStorage.getItem(LS_KEY) || "",
+  view: "posts",
+  posts: { items: [], total: 0, status: "", tag: "" },
+  editing: null,        // 正在编辑的文章对象
+  terms: { cats: [], tags: [] },
+  files: { parent: null, chain: [], items: [], total: 0, sel: new Set(), anchor: null, selParent: undefined },
+  fileEdit: null,      // 正在在线编辑的文件 {id,name,kind,content,draft,...}
+  search: { q: "", items: [], total: 0 },
+  busy: false,
+};
+
+const stage = document.getElementById("stage");
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+let upCancel = false;     // 分片上传途中用户点了"取消"
+let upSessionId = null;   // 当前分片会话 id，取消时拿它去 abort
+
+function toast(msg, ms = 2200) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("on"), ms);
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+function fmtSize(n) {
+  if (n == null) return "-";
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+  if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + " MB";
+  return (n / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+/* /raw/ 只对白名单类型给 inline 预览，和 backend 的 previewAllow 保持一致 */
+function isPreviewable(name) {
+  const ext = (name || "").toLowerCase().split(".").pop();
+  return ["txt", "md", "log", "json", "csv", "yaml", "yml", "sh",
+          "png", "jpg", "jpeg", "gif", "webp", "pdf"].includes(ext);
+}
+
+/* 在线编辑的类型分层：md 走 Markdown 编辑器，其余文本走纯文本编辑器，
+   PDF/图片/压缩包之类不出现"编辑"按钮，只能下载。与后端 textEditAllow 对齐 */
+const MD_EXT = ["md", "markdown"];
+const TEXT_EXT = ["txt", "log", "csv", "tsv", "json", "yaml", "yml", "sh", "ini", "conf",
+                   "toml", "sql", "py", "go", "js", "css", "xml", "html", "htm"];
+function isEditable(name) {
+  const ext = (name || "").toLowerCase().split(".").pop();
+  if (MD_EXT.includes(ext)) return "md";
+  if (TEXT_EXT.includes(ext)) return "text";
+  return "";
+}
+
+function fmtTime(s) {
+  if (!s) return "-";
+  const d = new Date(s);
+  if (isNaN(d)) return String(s);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// 列表里的紧凑时间：同一年只显示 MM-DD HH:mm，省一格宽度给文件名
+function fmtShortTime(s) {
+  if (!s) return "-";
+  const d = new Date(s);
+  if (isNaN(d)) return String(s);
+  const p = n => String(n).padStart(2, "0");
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// ---- 文章封面 ----
+// 站内封面是 /raw/<id>，需要带 token 才能预览私有图；外链原样用。
+function coverPreviewSrc(u) {
+  if (!u.startsWith("/")) return u;
+  return `${u}${u.includes("?") ? "&" : "?"}token=${encodeURIComponent(state.token)}`;
+}
+
+function coverPreviewHtml(url) {
+  const u = String(url || "").trim();
+  if (!u) return `<span class="hint">没有封面：列表里只显示标题和摘要，不占缩略图位置。</span>`;
+  return `<img src="${esc(coverPreviewSrc(u))}" alt="封面预览"
+    style="max-width:240px;max-height:135px;border-radius:8px;border:1px solid var(--line)">`;
+}
+
+function paintCoverPreview(url) {
+  const box = document.getElementById("coverPrev");
+  if (!box) return;
+  box.innerHTML = coverPreviewHtml(url);
+  const img = box.querySelector("img");
+  if (img) img.onerror = () => { box.innerHTML = `<span class="hint">这张图取不到（文件可能已删或未公开）</span>`; };
+}
+
+// 统一请求：带 token，解 envelope，非 0 code 抛错。
+// form 是 FormData（multipart），body 是普通对象（JSON），二者别同时传。
+async function req(path, { method = "GET", body, form, raw } = {}) {
+  const headers = {};
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  let payload;
+  if (form) {
+    payload = form; // 交给浏览器自己带 boundary，千万不要手写 Content-Type
+  } else if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
+  }
+  const res = await fetch(API + path, { method, headers, body: payload });
+  if (raw) return res;
+  let json;
+  try { json = await res.json(); } catch (e) { throw new Error(`HTTP ${res.status}：响应不是 JSON`); }
+  if (json.code !== 0) throw new Error(json.message || `请求失败（${json.code}）`);
+  return json.data;
+}
+
+function setToken(t) {
+  state.token = t || "";
+  if (t) localStorage.setItem(LS_KEY, t); else localStorage.removeItem(LS_KEY);
+  renderWho();
+}
+
+function renderWho() {
+  document.getElementById("who").textContent = state.token ? "已登录 · admin" : "未登录";
+}
+
+/* ================= 登录 ================= */
+function askLogin() {
+  const dlg = document.getElementById("dlg");
+  document.getElementById("dlgTitle").textContent = "登录";
+  document.getElementById("dlgBody").innerHTML = `
+    <label class="f" for="u">用户名</label>
+    <input id="u" type="text" value="admin" autocomplete="username">
+    <div style="height:10px"></div>
+    <label class="f" for="p">密码</label>
+    <input id="p" type="password" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>`;
+  document.getElementById("dlgFoot").innerHTML =
+    `<button class="btn" id="cancelLogin">取消</button>
+     <button class="btn primary" id="doLogin">登录</button>`;
+  dlg.showModal();
+  document.getElementById("p").focus();
+
+  document.getElementById("cancelLogin").onclick = () => dlg.close();
+  document.getElementById("doLogin").onclick = async () => {
+    const btn = document.getElementById("doLogin");
+    btn.disabled = true;
+    try {
+      const d = await req("/auth/login", {
+        method: "POST",
+        body: { username: document.getElementById("u").value.trim(), password: document.getElementById("p").value }
+      });
+      setToken(d.token);
+      dlg.close();
+      toast("登录成功");
+      go(state.view);
+    } catch (e) {
+      document.getElementById("loginErr").textContent = e.message;
+    } finally { btn.disabled = false; }
+  };
+}
+
+/* ================= 视图切换 ================= */
+// 切视图时按需拉数据：文件仓库和文章列表都是"进去才刷新"，
+// 否则第一次点进去会看到空列表（state 里还只有启动时那一份）。
+async function go(view) {
+  state.view = view;
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  if (!state.token && view !== "posts") { askLogin(); }
+  if (state.token) {
+    try {
+      if (view === "files") await loadFiles();
+      if (view === "posts") await loadPosts();
+      if (view === "terms") await loadTerms();
+    } catch (e) { toast(e.message); }
+  }
+  render();
+}
+
+document.getElementById("nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]");
+  if (b) go(b.dataset.view);
+});
+
+function render() {
+  if (!state.token) {
+    stage.innerHTML = `
+      <div class="head"><h1>博客后台</h1></div>
+      <div class="card">
+        <p class="hint">这个页面是后台管理，连的是 <code>blog-server</code>（Go + PostgreSQL + MinIO + Meilisearch）。</p>
+        <p class="hint">写操作需要登录，读接口（文章列表、搜索、分类、标签、公开文件下载）匿名可用。</p>
+        <button class="btn primary" id="loginBtn">登录</button>
+      </div>`;
+    document.getElementById("loginBtn").onclick = askLogin;
+    return;
+  }
+  if (state.view === "posts") renderPosts();
+  else if (state.view === "files") renderFiles();
+  else if (state.view === "fileedit") renderFileEdit();
+  else if (state.view === "terms") renderTerms();
+  else if (state.view === "search") renderSearch();
+  else renderOps();
+}
+
+/* ================= 文章 ================= */
+async function loadPosts() {
+  const qs = [];
+  if (state.posts.status === "__trash") qs.push("trash=1");
+  else if (state.posts.status) qs.push("status=" + encodeURIComponent(state.posts.status));
+  if (state.posts.tag) qs.push("tag=" + encodeURIComponent(state.posts.tag));
+  const q = qs.length ? "?" + qs.join("&") : "";
+  const d = await req("/posts" + q);
+  state.posts.items = d.items || [];
+  state.posts.total = d.total || 0;
+}
+
+function renderPosts() {
+  const p = state.posts;
+  const trash = p.status === "__trash";
+  stage.innerHTML = `
+    <div class="head">
+      <h1>文章</h1>
+      <div class="row">
+        <select id="pf" style="width:auto">
+          <option value="">全部状态</option>
+          <option value="draft">草稿</option>
+          <option value="published">已发布</option>
+          <option value="archived">已归档</option>
+          <option value="__trash">回收站</option>
+        </select>
+        <button class="btn" id="reload">刷新</button>
+        <button class="btn primary" id="newPost">新建草稿</button>
+      </div>
+    </div>
+    ${p.tag ? `<div class="row" style="margin-bottom:10px">
+      <span class="pill brand">标签筛选：${esc(p.tag)}</span>
+      <button class="btn sm" id="clearTag">清除筛选</button>
+    </div>` : ""}
+    <div class="card">
+      ${p.items.length ? `
+      <table>
+        <colgroup><col style="width:34%"><col style="width:12%"><col style="width:15%"><col style="width:17%"><col style="width:22%"></colgroup>
+        <thead><tr><th>标题</th><th>状态</th><th>标签</th><th>更新时间</th><th>操作</th></tr></thead>
+        <tbody>
+        ${p.items.map(it => `
+          <tr data-id="${it.id}">
+            <td><a href="#/post/${it.id}" data-open="${it.id}">${esc(it.title || "(无标题)")}</a>
+                <div class="mono">${esc(it.slug)}</div></td>
+            <td><span class="pill ${it.status === "published" ? "ok" : (it.status === "archived" ? "" : "warn")}">${esc(it.status)}</span>
+                ${it.visibility === "private" ? `<span class="pill">私有</span>` : ""}</td>
+            <td>${(it.tags || []).map(t => `<span class="pill brand" data-tag="${esc(t)}" style="cursor:pointer" title="按此标签筛选">${esc(t)}</span>`).join("") || '<span class="hint">—</span>'}</td>
+            <td class="mono">${fmtTime(it.updatedAt)}</td>
+            <td><div class="row">
+              ${trash ? `<button class="btn sm" data-restore="${it.id}">恢复</button>` : `
+                ${it.status !== "archived" ? `<button class="btn sm" data-arch="${it.id}">归档</button>` : ""}
+                ${it.status === "archived" ? `<button class="btn sm" data-undraft="${it.id}">退回草稿</button>` : ""}
+                <button class="btn sm danger" data-del="${it.id}">删除</button>`}
+            </div></td>
+          </tr>`).join("")}
+        </tbody>
+      </table>` : `<div class="empty">${trash ? "回收站是空的。" : "还没有文章。点右上「新建草稿」开始写。"}</div>`}
+    </div>
+    <p class="hint" style="margin-top:10px">共 ${p.total} 篇。${trash
+      ? "删除的文章在这里留 30 天，到期由清理任务物理删除（连同版本记录）。"
+      : "点标题进编辑器，改完保存即可；发布才会产生版本并进搜索索引。删除是软删，可在回收站恢复。"}</p>`;
+
+  const pf = document.getElementById("pf");
+  pf.value = p.status;
+  pf.onchange = async () => {
+    state.posts.status = pf.value;
+    try { await loadPosts(); render(); } catch (e) { toast(e.message); }
+  };
+  document.getElementById("reload").onclick = async () => {
+    try { await loadPosts(); render(); toast("已刷新"); } catch (e) { toast(e.message); }
+  };
+  document.getElementById("newPost").onclick = () => openEditor(null);
+  const clearTag = document.getElementById("clearTag");
+  if (clearTag) clearTag.onclick = async () => {
+    state.posts.tag = "";
+    try { await loadPosts(); render(); } catch (e) { toast(e.message); }
+  };
+  stage.querySelectorAll("[data-tag]").forEach(el => el.onclick = async () => {
+    state.posts.tag = el.dataset.tag;
+    try { await loadPosts(); render(); } catch (e) { toast(e.message); }
+  });
+  stage.querySelectorAll("[data-open]").forEach(a => a.onclick = ev => {
+    ev.preventDefault();
+    const id = Number(a.dataset.open);
+    const it = state.posts.items.find(x => x.id === id);
+    openEditor(it);
+  });
+  stage.querySelectorAll("[data-arch]").forEach(b => b.onclick = () => setPostStatus(Number(b.dataset.arch), "archived"));
+  stage.querySelectorAll("[data-undraft]").forEach(b => b.onclick = () => setPostStatus(Number(b.dataset.undraft), "draft"));
+  stage.querySelectorAll("[data-del]").forEach(b => b.onclick = () => deletePost(Number(b.dataset.del)));
+  stage.querySelectorAll("[data-restore]").forEach(b => b.onclick = () => restorePost(Number(b.dataset.restore)));
+}
+
+async function deletePost(id) {
+  if (!confirm("移到回收站？文章会从列表和搜索下线，30 天内可以恢复，到期才真正删除。")) return;
+  try {
+    await req(`/posts/${id}`, { method: "DELETE" });
+    toast("已移到回收站");
+    await loadPosts();
+    render();
+  } catch (e) { toast(e.message, 3500); }
+}
+
+async function restorePost(id) {
+  try {
+    const d = await req(`/posts/${id}/restore`, { method: "POST", body: {} });
+    toast(d.status === "published" ? "已恢复并重新进索引" : "已恢复");
+    await loadPosts();
+    render();
+  } catch (e) { toast(e.message, 3500); }
+}
+
+async function setPostStatus(id, status) {
+  if (status === "archived" && !confirm("归档后从列表和搜索里下线（内容不删，可再发布上线）。继续？")) return;
+  try {
+    await req(`/posts/${id}/status`, { method: "PUT", body: { status } });
+    toast(status === "archived" ? "已归档" : "已退回草稿");
+    await loadPosts();
+    render();
+  } catch (e) { toast(e.message, 3500); }
+}
+
+function openEditor(post) {
+  state.editing = post ? { ...post } : {
+    id: null, title: "", summary: "", contentMd: "", coverUrl: "", categoryId: null,
+    status: "draft", visibility: "public", tags: []
+  };
+  renderEditor();
+}
+
+function renderEditor() {
+  const e = state.editing;
+  const isNew = !e.id;
+  const catOptions = `<option value="">不挂分类</option>` +
+    state.terms.cats.map(c => `<option value="${c.id}" ${e.categoryId === c.id ? "selected" : ""}>${esc("　".repeat(depthOf(c)) + c.name)}</option>`).join("");
+  const tagBoxes = state.terms.tags.map(t => `
+    <label class="pill" style="cursor:pointer">
+      <input type="checkbox" data-tag="${t.id}" style="width:auto;margin-right:4px"
+        ${(e.tags || []).includes(t.name) ? "checked" : ""}>${esc(t.name)}
+    </label>`).join("") || `<span class="hint">还没有标签，去「分类与标签」建一个</span>`;
+
+  stage.innerHTML = `
+    <div class="head">
+      <h1>${isNew ? "新建草稿" : "编辑文章"}</h1>
+      <div class="row">
+        <button class="btn" id="back">返回列表</button>
+        <button class="btn" id="save">保存</button>
+        <button class="btn primary" id="publish">${e.status === "published" ? "重新发布" : "发布"}</button>
+        ${isNew ? "" : `<button class="btn" id="arch">${e.status === "archived" ? "退回草稿" : "归档"}</button>`}
+        ${isNew ? "" : `<button class="btn danger" id="delPost">移到回收站</button>`}
+      </div>
+    </div>
+    <div class="split">
+      <div class="card">
+        <label class="f">标题</label>
+        <input id="f-title" type="text" value="${esc(e.title)}" placeholder="文章标题">
+        <div style="height:12px"></div>
+        <label class="f">摘要（列表和搜索里用，可留空）</label>
+        <input id="f-summary" type="text" value="${esc(e.summary || "")}">
+        <div style="height:12px"></div>
+        <label class="f">封面（留空就不显示封面；上传后自动设为公开，前台才看得到）</label>
+        <div class="row" style="gap:8px">
+          <input id="f-cover" type="text" class="grow" value="${esc(e.coverUrl || "")}"
+                 placeholder="/raw/123 或 https://…">
+          <button class="btn sm" id="coverPick" type="button">选图上传</button>
+          <button class="btn sm" id="coverClear" type="button">清除</button>
+        </div>
+        <div id="coverPrev" style="margin-top:10px">${coverPreviewHtml(e.coverUrl)}</div>
+        <div style="height:12px"></div>
+        <label class="f">分类</label>
+        <select id="f-cat">${catOptions}</select>
+        <div style="height:12px"></div>
+        <label class="f">标签（点一下切换）</label>
+        <div id="f-tags">${tagBoxes}</div>
+        <div class="err" id="edErr"></div>
+      </div>
+      <div class="card">
+        <label class="f">正文（Markdown，保存后可直接发布）</label>
+        <textarea id="f-md" placeholder="# 标题&#10;&#10;正文……">${esc(e.contentMd || "")}</textarea>
+        <div class="hint" style="margin-top:8px">
+          ${e.status === "published" ? "当前状态：" + esc(e.status) : "草稿不会出现在公开列表和搜索结果里"}
+        </div>
+      </div>
+    </div>
+    ${isNew ? "" : `<h2>版本</h2><div class="card" id="revs"><span class="hint">加载中…</span></div>`}`;
+
+  document.getElementById("back").onclick = () => { state.editing = null; render(); };
+
+  // 封面：手填地址，或选一张图上传（上传后顺手设成公开，否则前台匿名取不到）
+  document.getElementById("coverClear").onclick = () => {
+    document.getElementById("f-cover").value = "";
+    paintCoverPreview("");
+  };
+  document.getElementById("f-cover").oninput = ev => paintCoverPreview(ev.target.value.trim());
+  document.getElementById("coverPick").onclick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/gif,image/webp";
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("name", "cover-" + Date.now() + (file.name.match(/\.[a-z0-9]+$/i) || [".png"])[0]);
+        const d = await req("/files/upload", { method: "POST", form: fd });
+        await req(`/files/${d.id}`, { method: "PATCH", body: { visibility: "public" } });
+        const url = `/raw/${d.id}`;
+        document.getElementById("f-cover").value = url;
+        paintCoverPreview(url);
+        toast("封面已上传并设为公开，记得保存文章");
+      } catch (e) { toast(e.message, 4000); }
+    };
+    input.click();
+  };
+
+  document.getElementById("save").onclick = () => savePost(false);
+  document.getElementById("publish").onclick = () => savePost(true);
+  const archBtn = document.getElementById("arch");
+  if (archBtn) archBtn.onclick = async () => {
+    const next = state.editing.status === "archived" ? "draft" : "archived";
+    if (next === "archived" && !confirm("归档后从列表和搜索里下线（内容不删，可再发布上线）。继续？")) return;
+    try {
+      await req(`/posts/${state.editing.id}/status`, { method: "PUT", body: { status: next } });
+      toast(next === "archived" ? "已归档" : "已退回草稿");
+      const d = await req(`/posts/${state.editing.id}`);
+      state.editing = d;
+      renderEditor();
+    } catch (e2) { toast(e2.message, 3500); }
+  };
+  const delBtn = document.getElementById("delPost");
+  if (delBtn) delBtn.onclick = async () => {
+    if (!confirm("移到回收站？文章会从列表和搜索下线，30 天内可以在「回收站」里恢复。")) return;
+    try {
+      await req(`/posts/${state.editing.id}`, { method: "DELETE" });
+      toast("已移到回收站");
+      state.editing = null;
+      state.posts.status = "";
+      await loadPosts();
+      render();
+    } catch (e2) { toast(e2.message, 3500); }
+  };
+  if (!isNew) loadRevisions(e.id);
+  else stage.querySelector("#revs") && (stage.querySelector("#revs").innerHTML = "");
+  paintCoverPreview(e.coverUrl || "");   // 首屏给预览图挂上 onerror
+}
+
+function readEditor() {
+  const get = id => document.getElementById(id);
+  const tagIds = Array.from(stage.querySelectorAll("[data-tag]"))
+    .filter(x => x.checked).map(x => Number(x.dataset.tag));
+  return {
+    title: get("f-title").value.trim(),
+    summary: get("f-summary").value.trim(),
+    contentMd: get("f-md").value,
+    coverUrl: get("f-cover").value.trim(),
+    categoryId: get("f-cat").value ? Number(get("f-cat").value) : 0,
+    tagIds,
+  };
+}
+
+async function savePost(alsoPublish) {
+  const v = readEditor();
+  const err = document.getElementById("edErr");
+  err.textContent = "";
+  if (!v.title) { err.textContent = "标题不能为空"; return; }
+  if (alsoPublish && !v.contentMd.trim()) { err.textContent = "发布前先写点正文"; return; }
+
+  try {
+    let id = state.editing.id;
+    if (id) {
+      await req(`/posts/${id}`, { method: "PUT", body: { title: v.title, summary: v.summary, contentMd: v.contentMd, coverUrl: v.coverUrl, categoryId: v.categoryId } });
+    } else {
+      const d = await req("/posts", { method: "POST", body: { title: v.title, summary: v.summary, contentMd: v.contentMd, coverUrl: v.coverUrl, categoryId: v.categoryId } });
+      id = d.id;
+      state.editing.id = id;
+    }
+    await req(`/posts/${id}/tags`, { method: "PUT", body: { tagIds: v.tagIds } });
+    if (alsoPublish) {
+      await req(`/posts/${id}/publish`, { method: "POST" });
+      toast("已发布，搜索索引稍后同步");
+    } else {
+      toast("已保存");
+    }
+    await loadPosts();
+    if (alsoPublish) {
+      state.editing = state.posts.items.find(x => x.id === id) || state.editing;
+      renderEditor();
+      loadRevisions(id);
+    } else {
+      renderEditor();
+    }
+  } catch (e2) { err.textContent = e2.message; }
+}
+
+async function loadRevisions(postId) {
+  const box = document.getElementById("revs");
+  if (!box) return;
+  try {
+    const d = await req(`/posts/${postId}/revisions`);
+    const items = Array.isArray(d) ? d : (d.items || []);
+    box.innerHTML = items.length ? `
+      <table><colgroup><col style="width:12%"><col style="width:44%"><col style="width:24%"><col style="width:20%"></colgroup>
+      <thead><tr><th>版本</th><th>标题</th><th>时间</th><th>操作</th></tr></thead><tbody>
+      ${items.map(r => `<tr>
+        <td>v${r.versionNo}</td><td>${esc(r.title)}</td><td class="mono">${fmtTime(r.createdAt)}</td>
+        <td><button class="btn sm" data-rb="${r.versionNo}">回滚到此版</button></td>
+      </tr>`).join("")}</tbody></table>` : `<span class="hint">还没有版本，发布后会有一条。</span>`;
+    box.querySelectorAll("[data-rb]").forEach(b => b.onclick = async () => {
+      if (!confirm(`回滚到 v${b.dataset.rb}？会生成一个新版本，历史不丢。`)) return;
+      try {
+        await req(`/posts/${postId}/rollback`, { method: "POST", body: { versionNo: Number(b.dataset.rb) } });
+        toast("已回滚");
+        state.editing = null;
+        await loadPosts();
+        render();
+      } catch (e) { toast(e.message); }
+    });
+  } catch (e) { box.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+}
+
+/* ================= 通用小弹窗 ================= */
+// 原生 prompt() 在各家浏览器里的样式和行为都不一致，统一换成页面内 dialog。
+function askText(title, label, value, hint, onOk) {
+  const dlg = document.getElementById("dlg");
+  document.getElementById("dlgTitle").textContent = title;
+  document.getElementById("dlgBody").innerHTML =
+    `<label class="f">${esc(label)}</label>
+     <input id="askInput" type="text" value="${esc(value || "")}">
+     ${hint ? `<p class="hint" style="margin-top:8px">${esc(hint)}</p>` : ""}`;
+  document.getElementById("dlgFoot").innerHTML =
+    `<button class="btn" id="askCancel">取消</button><button class="btn primary" id="askOk">确定</button>`;
+  dlg.showModal();
+  const input = document.getElementById("askInput");
+  input.focus();
+  input.select();
+  document.getElementById("askCancel").onclick = () => dlg.close();
+  const submit = () => {
+    const v = input.value.trim();
+    if (!v) { toast("不能为空"); return; }
+    dlg.close();
+    onOk(v);
+  };
+  document.getElementById("askOk").onclick = submit;
+  input.onkeydown = ev => { if (ev.key === "Enter") submit(); };
+}
+
+/* ================= 文件仓库 ================= */
+async function loadFiles() {
+  const q = state.files.parent ? `?parent=${state.files.parent}` : "";
+  const d = await req("/files" + q);
+  state.files.items = d.items || [];
+  state.files.total = d.total || 0;
+  // 换目录才清空勾选；同目录里上传/删除后刷新不该把已选的清掉
+  if (state.files.selParent !== state.files.parent) {
+    state.files.selParent = state.files.parent;
+    state.files.sel = new Set();
+    state.files.anchor = null;
+  }
+  const alive = new Set((state.files.items || []).filter(it => it.type === "file").map(it => it.id));
+  state.files.sel = new Set(Array.from(state.files.sel).filter(id => alive.has(id)));
+}
+
+function renderFiles() {
+  closeRowMenu();
+  const f = state.files;
+  const crumbs = [`<button data-crumb="0">根目录</button>`]
+    .concat(f.chain.map(n => `<span class="bread-sep">/</span><button data-crumb="${n.id}">${esc(n.name)}</button>`));
+
+  stage.innerHTML = `
+    <div class="head">
+      <h1>文件仓库</h1>
+      <div class="row">
+        <button class="btn" id="mkdir">新建目录</button>
+        <button class="btn" id="zipDir">打包下载本页</button>
+        <label class="btn primary" for="picker" style="display:inline-flex;align-items:center">选择文件上传</label>
+        <input id="picker" type="file" style="max-width:280px">
+      </div>
+    </div>
+    <div class="card">
+      <div class="crumbs" style="margin-bottom:12px">${crumbs.join("")}</div>
+      <div class="row selbar">
+        <span class="hint" id="selCount">未选择文件</span>
+        <button class="btn sm" id="selPage" type="button">全选本页</button>
+        <button class="btn sm" id="selClear" type="button">取消选择</button>
+        <button class="btn sm primary" id="zipSel" type="button" disabled>打包下载选中</button>
+        <span class="hint">Shift 点一下可连着选一段</span>
+      </div>
+      <div class="row" style="align-items:center;gap:10px">
+        <div id="uplInfo" class="hint grow"></div>
+        <button class="btn sm" id="cancelUp" style="display:none">取消上传</button>
+      </div>
+      <div class="progress" id="uplBar" style="display:none"><i></i></div>
+      ${f.items.length ? `
+      <table class="filetable">
+        <colgroup><col style="width:34px"><col style="width:auto"><col style="width:206px"></colgroup>
+        <thead><tr>
+          <th><input type="checkbox" id="selAll" title="全选本页文件" aria-label="全选本页文件"></th>
+          <th>名称</th><th style="text-align:right">操作</th>
+        </tr></thead>
+        <tbody>
+        ${f.items.map(it => {
+          const isDir = it.type === "dir";
+          const checked = !isDir && f.sel.has(it.id);
+          const sub = isDir
+            ? `目录 · ${fmtShortTime(it.updatedAt)}`
+            : `${esc((it.sha256 || "").slice(0, 10))}… · ${fmtSize(it.size)} · ${fmtShortTime(it.updatedAt)}`;
+          return `<tr class="${checked ? "sel" : ""}">
+            <td class="selcell">${isDir ? "" : `<input type="checkbox" data-selid="${it.id}" ${checked ? "checked" : ""} aria-label="选择 ${esc(it.name)}">`}</td>
+            <td>
+              <div class="name-line">
+                <svg class="file-icon ${isDir ? "dir" : ""}" viewBox="0 0 24 24" aria-hidden="true">
+                  ${isDir ? `<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>`
+                    : `<path d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path>`}
+                </svg>
+                ${isDir ? `<a href="#/dir/${it.id}" data-dir="${it.id}" title="${esc(it.name)}">${esc(it.name)}</a>`
+                        : `<span title="${esc(it.name)}">${esc(it.name)}</span>`}
+              </div>
+              <div class="sub" title="${esc(fmtTime(it.updatedAt))}">${sub}</div>
+            </td>
+            <td><div class="ops">
+              ${isDir
+                ? `<a class="btn sm" href="${API}/files/zip?dir=${it.id}&token=${encodeURIComponent(state.token)}" target="_blank" rel="noopener">打包</a>`
+                : `<a class="btn sm" href="${API}/files/${it.id}/download?token=${encodeURIComponent(state.token)}" target="_blank" rel="noopener">下载</a>`}
+              ${isDir ? "" : (isEditable(it.name) ? `<button class="btn sm" data-edit="${it.id}" data-ename="${esc(it.name)}">编辑</button>` : "")}
+              ${isDir ? "" : (isPreviewable(it.name) ? `<a class="btn sm" href="${API}/raw/${it.id}?token=${encodeURIComponent(state.token)}" target="_blank" rel="noopener">预览</a>` : "")}
+              <button class="btn sm more" data-more="${it.id}" aria-haspopup="menu" aria-label="更多操作">更多</button>
+            </div></td>
+          </tr>`;
+        }).join("")}
+        </tbody>
+      </table>` : `<div class="empty">这个目录是空的。可以新建子目录，或直接上传文件。</div>`}
+    </div>
+    <p class="hint" style="margin-top:10px">
+      共 ${f.total} 项。小于 8MB 走单文件上传；更大的自动走分片（8MB/片，带进度）。同内容重复上传只加引用，不重复占存储。
+    </p>
+    <div class="card" style="margin-top:16px">
+      <div class="row">
+        <div class="grow">
+          <label class="f">按 id 恢复回收站里的节点（软删后 30 天内可恢复）</label>
+          <input id="restoreId" type="text" placeholder="例如 12">
+        </div>
+        <button class="btn" id="doRestore" style="align-self:flex-end">恢复</button>
+      </div>
+    </div>`;
+
+  stage.querySelectorAll("[data-crumb]").forEach(b => b.onclick = () => enterDir(Number(b.dataset.crumb)));
+  stage.querySelectorAll("[data-dir]").forEach(a => a.onclick = ev => { ev.preventDefault(); enterDir(Number(a.dataset.dir)); });
+
+  // ---- 批量选择：勾选框 / 全选 / Shift 连选 ----
+  const fileRows = () => f.items.filter(it => it.type === "file");
+  const selTotal = () => fileRows()
+    .filter(it => f.sel.has(it.id))
+    .reduce((s, it) => s + (it.size || 0), 0);
+
+  const syncSelUI = () => {
+    stage.querySelectorAll("input[data-selid]").forEach(cb => {
+      const id = Number(cb.dataset.selid);
+      const on = f.sel.has(id);
+      cb.checked = on;
+      const tr = cb.closest("tr");
+      if (tr) tr.classList.toggle("sel", on);
+    });
+    const all = document.getElementById("selAll");
+    const files = fileRows();
+    if (all) {
+      all.checked = files.length > 0 && f.sel.size === files.length;
+      all.indeterminate = f.sel.size > 0 && f.sel.size < files.length;
+    }
+    const cnt = document.getElementById("selCount");
+    if (cnt) {
+      cnt.textContent = f.sel.size
+        ? `已选 ${f.sel.size} 个文件 · ${fmtSize(selTotal())}`
+        : "未选择文件";
+    }
+    const zs = document.getElementById("zipSel");
+    if (zs) zs.disabled = f.sel.size === 0;
+  };
+
+  const rangeSelect = (fromId, toId, on) => {
+    const files = fileRows();
+    const a = files.findIndex(it => it.id === fromId);
+    const b = files.findIndex(it => it.id === toId);
+    if (a < 0 || b < 0) return;
+    const [s, e] = a <= b ? [a, b] : [b, a];
+    for (let i = s; i <= e; i++) {
+      if (on) f.sel.add(files[i].id);
+      else f.sel.delete(files[i].id);
+    }
+  };
+
+  stage.querySelectorAll("input[data-selid]").forEach(cb => {
+    cb.onclick = ev => {
+      const id = Number(cb.dataset.selid);
+      const on = cb.checked;
+      if (ev.shiftKey && f.anchor != null && f.anchor !== id) {
+        rangeSelect(f.anchor, id, on);
+      } else {
+        if (on) f.sel.add(id); else f.sel.delete(id);
+      }
+      f.anchor = id;
+      syncSelUI();
+    };
+  });
+
+  const selAll = document.getElementById("selAll");
+  if (selAll) selAll.onchange = () => {
+    f.sel = selAll.checked ? new Set(fileRows().map(it => it.id)) : new Set();
+    f.anchor = null;
+    syncSelUI();
+  };
+  document.getElementById("selPage").onclick = () => {
+    f.sel = new Set(fileRows().map(it => it.id));
+    f.anchor = null;
+    syncSelUI();
+    toast(`已全选本页 ${f.sel.size} 个文件`);
+  };
+  document.getElementById("selClear").onclick = () => {
+    f.sel = new Set();
+    f.anchor = null;
+    syncSelUI();
+  };
+  document.getElementById("zipSel").onclick = () => {
+    if (!f.sel.size) return;
+    if (f.sel.size > 100) {
+      toast("一次最多打包 100 个文件，请分几批", 4000);
+      return;
+    }
+    const ids = Array.from(f.sel).join(",");
+    window.open(`${API}/files/zip?ids=${ids}&token=${encodeURIComponent(state.token)}`, "_blank");
+  };
+  syncSelUI();
+
+  document.getElementById("mkdir").onclick = mkdir;
+  document.getElementById("zipDir").onclick = () => {
+    const ids = f.items.filter(it => it.type === "file").map(it => it.id);
+    if (!ids.length) { toast("这个目录没有文件可打包"); return; }
+    window.open(`${API}/files/zip?ids=${ids.join(",")}&token=${encodeURIComponent(state.token)}`, "_blank");
+  };
+  const picker = document.getElementById("picker");
+  picker.onchange = () => { if (picker.files[0]) uploadFile(picker.files[0]); picker.value = ""; };
+
+  document.getElementById("doRestore").onclick = async () => {
+    const id = Number(document.getElementById("restoreId").value.trim());
+    if (!id) return toast("先填节点 id");
+    try { const d = await req(`/files/${id}/restore`, { method: "POST" }); toast(d.affected ? "已恢复" : "没找到可恢复的节点"); await loadFiles(); renderFiles(); }
+    catch (e) { toast(e.message); }
+  };
+
+  // 行内动作统一绑定：表格里露出来的按钮和「更多」抽屉菜单共用同一套 handler
+  const bindActions = root => {
+    root.querySelectorAll("[data-share]").forEach(b => b.onclick = async () => {
+      const link = `${location.origin}${API}/s/${b.dataset.share}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        toast("分享链接已复制（公开文件匿名可下，私有文件仍需登录）");
+      } catch (e) {
+        toast(link, 6000);
+      }
+    });
+
+    root.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+      const id = Number(b.dataset.del);
+      if (!confirm("删除会移入回收站（30 天后物理清理），其子目录一并隐去。继续？")) return;
+      try { await req(`/files/${id}`, { method: "DELETE" }); toast("已移入回收站"); await loadFiles(); renderFiles(); }
+      catch (e) { toast(e.message); }
+    });
+
+    root.querySelectorAll("[data-replace]").forEach(b => b.onclick = () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("note", "前端替换");
+        try { await req(`/files/${b.dataset.replace}/versions`, { method: "POST", form: fd }); toast("已替换，新增一个版本"); await loadFiles(); renderFiles(); }
+        catch (e) { toast(e.message); }
+      };
+      input.click();
+    });
+
+    // 重命名：改名走 PATCH /files/:id
+    root.querySelectorAll("[data-ren]").forEach(b => b.onclick = () => {
+      const old = b.dataset.oname;
+      askText("重命名 · " + old, "新名字", old, "同目录下不能重名；服务端会回 409。", async name => {
+        if (name === old) return;
+        try {
+          await req(`/files/${b.dataset.ren}`, { method: "PATCH", body: { name } });
+          toast("已重命名"); await loadFiles(); renderFiles();
+        } catch (e) { toast(e.message, 3500); }
+      });
+    });
+
+    // 可见性：public 才会出现在前台匿名浏览里
+    root.querySelectorAll("[data-vis]").forEach(b => b.onclick = async () => {
+      const next = b.dataset.vcur === "public" ? "private" : "public";
+      try {
+        await req(`/files/${b.dataset.vis}`, { method: "PATCH", body: { visibility: next } });
+        toast(next === "public" ? "已设为公开，前台可以看到了" : "已设为私有，前台不再展示");
+        await loadFiles(); renderFiles();
+      } catch (e) { toast(e.message, 3500); }
+    });
+
+    // 移动：填目标目录 id，0 表示根目录；服务端会拒绝移到自己的子目录
+    root.querySelectorAll("[data-move]").forEach(b => b.onclick = () => {
+      askText("移动 · " + b.dataset.mname, "目标目录 id", "0",
+        "0 = 根目录。填已有目录的 id；移到自己的子目录会被拒绝。", async raw => {
+          const to = Number(raw);
+          if (!Number.isInteger(to) || to < 0) return toast("目录 id 要填数字");
+          try {
+            await req(`/files/${b.dataset.move}`, { method: "PATCH", body: { parentId: to } });
+            toast("已移动"); await loadFiles(); renderFiles();
+          } catch (e) { toast(e.message, 3500); }
+        });
+    });
+
+    // 版本列表：GET /files/:id/versions，回滚用 POST /files/:id/rollback {versionNo}
+    root.querySelectorAll("[data-vers]").forEach(b => b.onclick = () => showFileVersions(Number(b.dataset.vers), b.dataset.vname));
+
+    // 在线编辑：md 双栏预览，其他文本纯文本；PDF/图片没有这个按钮
+    root.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openFileEdit(Number(b.dataset.edit), b.dataset.ename));
+  };
+
+  // 「更多」抽屉：常用动作留在行内，其余收在这个小浮层里
+  stage.querySelectorAll("[data-more]").forEach(btn => btn.onclick = ev => {
+    ev.stopPropagation();
+    if (document.getElementById("rowMenu")) { closeRowMenu(); return; }
+    const id = Number(btn.dataset.more);
+    const it = f.items.find(x => x.id === id);
+    if (!it) return;
+    const isDir = it.type === "dir";
+    const html = [
+      isDir ? "" : `<button type="button" role="menuitem" data-share="${it.id}">复制分享链接</button>`,
+      isDir ? "" : `<button type="button" role="menuitem" data-replace="${it.id}" data-rname="${esc(it.name)}">替换文件（新增版本）</button>`,
+      isDir ? "" : `<button type="button" role="menuitem" data-vers="${it.id}" data-vname="${esc(it.name)}">版本历史 / 回滚</button>`,
+      isDir ? "" : `<button type="button" role="menuitem" data-vis="${it.id}" data-vcur="${it.visibility}">${it.visibility === "public" ? "设为私有" : "设为公开"}</button>`,
+      `<div class="sep"></div>`,
+      `<button type="button" role="menuitem" data-ren="${it.id}" data-oname="${esc(it.name)}">重命名</button>`,
+      `<button type="button" role="menuitem" data-move="${it.id}" data-mname="${esc(it.name)}">移动到其他目录</button>`,
+      `<div class="sep"></div>`,
+      `<button type="button" role="menuitem" class="danger" data-del="${it.id}">移入回收站</button>`,
+    ].join("");
+    openRowMenu(btn, html, bindActions);
+  });
+
+  bindActions(stage);
+}
+
+let rowMenuCleanup = null;
+
+function closeRowMenu() {
+  const m = document.getElementById("rowMenu");
+  if (m) m.remove();
+  if (rowMenuCleanup) { rowMenuCleanup(); rowMenuCleanup = null; }
+}
+
+// 浮层挂在 body 上：表格有 overflow 裁剪，放在单元格里会被切掉
+function openRowMenu(btn, html, binder) {
+  closeRowMenu();
+  const menu = document.createElement("div");
+  menu.className = "rowmenu";
+  menu.id = "rowMenu";
+  menu.setAttribute("role", "menu");
+  menu.innerHTML = html;
+  document.body.appendChild(menu);
+
+  const r = btn.getBoundingClientRect();
+  const w = menu.offsetWidth || 150;
+  const h = menu.offsetHeight || 180;
+  let left = Math.min(r.right - w, window.innerWidth - w - 8);
+  left = Math.max(8, left);
+  let top = r.bottom + 6;
+  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+
+  if (binder) binder(menu);
+  menu.querySelectorAll("button").forEach(b => b.addEventListener("click", () => closeRowMenu()));
+
+  const onDoc = ev => {
+    if (!ev.target.closest("#rowMenu") && !ev.target.closest("[data-more]")) closeRowMenu();
+  };
+  const onKey = ev => { if (ev.key === "Escape") closeRowMenu(); };
+  const onScroll = () => closeRowMenu();
+  document.addEventListener("click", onDoc);
+  document.addEventListener("keydown", onKey);
+  window.addEventListener("scroll", onScroll, true);
+  window.addEventListener("resize", onScroll);
+  rowMenuCleanup = () => {
+    document.removeEventListener("click", onDoc);
+    document.removeEventListener("keydown", onKey);
+    window.removeEventListener("scroll", onScroll, true);
+    window.removeEventListener("resize", onScroll);
+  };
+}
+async function showFileVersions(fileId, name) {
+  const dlg = document.getElementById("dlg");
+  document.getElementById("dlgTitle").textContent = "版本 · " + name;
+  document.getElementById("dlgBody").innerHTML = `<span class="hint">加载中…</span>`;
+  document.getElementById("dlgFoot").innerHTML = `<button class="btn" id="vClose">关闭</button>`;
+  dlg.showModal();
+  document.getElementById("vClose").onclick = () => dlg.close();
+
+  const paint = items => {
+    document.getElementById("dlgBody").innerHTML = items.length ? `
+      <table><colgroup><col style="width:16%"><col style="width:30%"><col style="width:22%"><col style="width:32%"></colgroup>
+      <thead><tr><th>版本</th><th>内容 sha</th><th>大小</th><th>操作</th></tr></thead><tbody>
+      ${items.map(v => `<tr>
+        <td>v${v.versionNo}<div class="mono">${fmtTime(v.createdAt)}</div></td>
+        <td class="mono">${esc((v.sha256 || "").slice(0, 10))}…</td>
+        <td class="mono">${fmtSize(v.size)}</td>
+        <td>${v.note ? `<div class="hint">${esc(v.note)}</div>` : ""}
+            <button class="btn sm" data-vrb="${v.versionNo}">回滚到此版</button></td>
+      </tr>`).join("")}</tbody></table>` : `<span class="hint">还没有版本记录。</span>`;
+    document.querySelectorAll("#dlgBody [data-vrb]").forEach(btn => btn.onclick = async () => {
+      if (!confirm(`把文件内容回滚到 v${btn.dataset.vrb}？只改指针，不删版本。`)) return;
+      try {
+        await req(`/files/${fileId}/rollback`, { method: "POST", body: { versionNo: Number(btn.dataset.vrb) } });
+        toast("已回滚到 v" + btn.dataset.vrb);
+        document.getElementById("dlg").close();
+        await loadFiles(); renderFiles();
+      } catch (e) { toast(e.message, 3500); }
+    });
+  };
+  try {
+    const r = await req(`/files/${fileId}/versions`);
+    paint((r.items || []).slice());
+  } catch (e) {
+    document.getElementById("dlgBody").innerHTML = `<span class="err">${esc(e.message)}</span>`;
+  }
+}
+
+/* ================= 在线编辑（md / 文本） ================= */
+// 载入内容：GET /files/:id/text 只对文本白名单开放，PDF/图片会被后端 415 挡掉，
+// 前端本来就不显示"编辑"按钮，属于双保险。
+async function openFileEdit(id, name) {
+  try {
+    const d = await req(`/files/${id}/text`);
+    const kind = isEditable(d.name);
+    if (!kind) return toast("这个类型只能下载", 3000);
+    state.fileEdit = {
+      id, name: d.name, kind, content: d.content, draft: d.content,
+      versionNo: d.versionNo, versionCnt: d.versionCount, size: d.size
+    };
+    state.view = "fileedit";
+    document.querySelectorAll("#nav button").forEach(b => b.classList.remove("on"));
+    render();
+  } catch (e) { toast(e.message, 4000); }
+}
+
+function renderFileEdit() {
+  const f = state.fileEdit;
+  if (!f) { state.view = "files"; return renderFiles(); }
+  const two = f.kind === "md";
+  stage.innerHTML = `
+    <div class="head">
+      <div>
+        <h1>${esc(f.name)}</h1>
+        <div class="hint">${two
+          ? "Markdown 编辑器：左边写原文，右边实时预览。图片可直接 Ctrl+V 粘贴或拖进左栏，会自动上传到本目录的 assets/。保存生成新版本，可随时回滚。"
+          : "纯文本编辑器：保存会生成一个新版本，可随时回滚。"}</div>
+      </div>
+      <div class="row">
+        <button class="btn" id="feBack">返回文件仓库</button>
+        ${two ? `<button class="btn" id="feImage" type="button">插入图片</button>
+        <input type="file" id="feImageInput" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none">` : ""}
+        <button class="btn primary" id="feSave">保存新版本</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="fmeta">
+        <span>当前 v${f.versionNo || 0} / 共 ${f.versionCnt || 0} 个版本</span>
+        <span>${fmtSize(f.size)}</span>
+        <span id="feStat">${f.draft.split("\n").length} 行 · ${f.draft.length} 字</span>
+        <span class="dirty" id="feDirty" style="display:none">未保存</span>
+        <span class="hint">Ctrl+S 保存</span>
+      </div>
+      <div class="progress" id="feBar" style="display:none"><i></i></div>
+    </div>
+    <div class="fedit ${two ? "two" : ""}" style="margin-top:14px">
+      ${two ? `<div class="pane">
+        <div class="pane-h">编辑 · Markdown 源码</div>
+        <textarea id="feText" spellcheck="false" placeholder="在这里输入 Markdown 原文…">${esc(f.draft)}</textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-h">预览 · 实时</div>
+        <div class="md-body" id="fePrev">${mdToHtml(f.draft)}</div>
+      </div>`
+      : `<div class="pane">
+        <div class="pane-h">编辑 · 纯文本</div>
+        <textarea id="feText" spellcheck="false" placeholder="在这里输入内容…">${esc(f.draft)}</textarea>
+      </div>`}
+    </div>
+    <p class="hint" style="margin-top:10px">
+      类型：${two ? "Markdown" : "纯文本"} · 上限 512KB。保存走的是和服务端上传同一套 CAS + 版本逻辑，
+      所以"版本"里能看到每次在线编辑留下的记录。
+    </p>`;
+
+  const ta = document.getElementById("feText");
+  const prev = document.getElementById("fePrev");
+  const saveBtn = document.getElementById("feSave");
+  const statEl = document.getElementById("feStat");
+  const dirtyEl = document.getElementById("feDirty");
+  let timer = null;
+
+  const refreshDirty = () => {
+    const dirty = f.draft !== f.content;
+    dirtyEl.style.display = dirty ? "inline" : "none";
+    saveBtn.disabled = !dirty;
+  };
+  ta.oninput = () => {
+    f.draft = ta.value;
+    statEl.textContent = `${f.draft.split("\n").length} 行 · ${f.draft.length} 字`;
+    refreshDirty();
+    if (prev) {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        prev.innerHTML = mdToHtml(f.draft);
+        hydrateRawImages(prev);
+      }, 220);
+    }
+  };
+  saveBtn.onclick = saveFileEdit;
+
+  // ---- Markdown 插图：粘贴 / 拖拽 / 按钮，都走同一个上传 ----
+  if (two) {
+    const insertAtCursor = text => {
+      const pos = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+      const before = ta.value.slice(0, pos);
+      const after = ta.value.slice(pos);
+      const lead = before === "" || before.endsWith("\n") ? "" : "\n";
+      const ins = lead + text + "\n";
+      ta.value = before + ins + after;
+      ta.selectionStart = ta.selectionEnd = pos + ins.length;
+      ta.dispatchEvent(new Event("input"));
+    };
+
+    const uploadImage = async fileObj => {
+      const nm = fileObj.name || ("paste-" + Date.now() + ".png");
+      const fd = new FormData();
+      fd.append("file", fileObj, /\.(png|jpe?g|gif|webp)$/i.test(nm) ? nm : "paste-" + Date.now() + ".png");
+      const headers = state.token ? { Authorization: "Bearer " + state.token } : {};
+      const res = await fetch(`${API}/files/${f.id}/assets`, { method: "POST", headers, body: fd });
+      const txt = await res.text();
+      let json = null;
+      try { json = JSON.parse(txt); } catch (_) {}
+      if (!json || json.code !== 0) {
+        throw new Error(json && json.message ? json.message : `上传失败（HTTP ${res.status}）`);
+      }
+      return json.data;
+    };
+
+    const handleImageFiles = async files => {
+      const imgs = Array.from(files || []).filter(x =>
+        /image\/(png|jpeg|gif|webp)/.test(x.type || "") || /\.(png|jpe?g|gif|webp)$/i.test(x.name || ""));
+      if (!imgs.length) { toast("只支持 png / jpg / gif / webp 图片"); return; }
+      for (const img of imgs) {
+        if (img.size > 8 * 1024 * 1024) { toast(`${img.name || "图片"} 超过 8MB，已跳过`, 3500); continue; }
+        const ph = `![上传中…]()`;
+        insertAtCursor(ph);
+        try {
+          const d = await uploadImage(img);
+          ta.value = ta.value.replace(ph, d.markdown);
+          ta.dispatchEvent(new Event("input"));
+          toast(`已插入 ${d.name}`);
+        } catch (e) {
+          ta.value = ta.value.replace(ph, "");
+          ta.dispatchEvent(new Event("input"));
+          toast(e.message, 4000);
+        }
+      }
+    };
+
+    ta.onpaste = e => {
+      const dt = e.clipboardData;
+      if (!dt) return;
+      const items = Array.from(dt.items || []);
+      const imgs = items.filter(it => it.kind === "file" && /^image\//.test(it.type));
+      if (imgs.length) {
+        e.preventDefault();
+        handleImageFiles(imgs.map(it => it.getAsFile()).filter(Boolean));
+        return;
+      }
+      // 从资源管理器复制「文件」时，剪贴板里只有 text/uri-list（file:///C:/…），
+      // 浏览器读不到本地文件；直接放行就会把路径当正文粘进去，所以拦住并引导去选文件。
+      const uri = (dt.getData("text/uri-list") || dt.getData("text/plain") || "").trim();
+      if (uri && /^(file:\/\/|[A-Za-z]:\\|\/Users\/|\/home\/|\/mnt\/)/.test(uri)) {
+        e.preventDefault();
+        toast("粘进来的是本地文件路径，浏览器读不到这个文件。请用「插入图片」选中它，或直接把文件拖进左栏", 5000);
+        const pick = document.getElementById("feImageInput");
+        if (pick) pick.click();
+        return;
+      }
+      // 剩下是普通文本，正常粘贴
+    };
+    ta.ondragover = e => {
+      if (!Array.from(e.dataTransfer.types || []).includes("Files")) return;
+      e.preventDefault();
+      ta.classList.add("drop-on");
+    };
+    ta.ondragleave = () => ta.classList.remove("drop-on");
+    ta.ondrop = e => {
+      const files = (e.dataTransfer && e.dataTransfer.files) || [];
+      if (!files.length) return;
+      e.preventDefault();
+      ta.classList.remove("drop-on");
+      handleImageFiles(files);
+    };
+
+    const imgBtn = document.getElementById("feImage");
+    const imgInput = document.getElementById("feImageInput");
+    if (imgBtn && imgInput) {
+      imgBtn.onclick = () => imgInput.click();
+      imgInput.onchange = () => {
+        handleImageFiles(imgInput.files);
+        imgInput.value = "";
+      };
+    }
+  }
+  ta.onkeydown = e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      if (f.draft !== f.content) saveFileEdit();
+    }
+  };
+  if (prev) hydrateRawImages(prev);   // 首次渲染就把私有图换成带登录态的 blob
+
+  document.getElementById("feBack").onclick = () => {
+    if (f.draft !== f.content && !confirm("有未保存的改动，确定离开？")) return;
+    state.fileEdit = null;    state.view = "files";
+    renderFiles();
+  };
+  refreshDirty();
+  ta.focus();
+}
+
+async function saveFileEdit() {
+  const f = state.fileEdit;
+  if (!f) return;
+  const btn = document.getElementById("feSave");
+  if (btn) btn.disabled = true;
+  try {
+    const d = await req(`/files/${f.id}/text`, { method: "PUT", body: { content: f.draft, note: "在线编辑" } });
+    f.content = f.draft;
+    f.versionNo = d.versionNo;
+    f.versionCnt = (f.versionCnt || 0) + 1;
+    f.size = d.size;
+    await loadFiles();
+    if (state.view === "fileedit") {
+      render();
+      toast(`已保存为 v${d.versionNo}`);
+    } else {
+      renderFiles();
+      toast(`已保存为 v${d.versionNo}`);
+    }
+  } catch (e) {
+    toast(e.message, 4000);
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* --- 极简 Markdown 渲染：不引外部库，服务器没网也能用 ---
+   支持：标题、粗斜体、行内代码、围栏代码块、有序/无序列表、引用、分割线、
+        链接、图片、表格、删除线。转义先做，链接 href 再过一遍协议白名单。 */
+// 私有插图不能靠 <img src> 直接取：<img> 带不了 Authorization 头。
+// 这里用 fetch + blob 把 /raw/<id> 的图片换成 objectURL，登着录就能看到自己文章里的私有图。
+const imgBlobCache = new Map();
+
+function hydrateRawImages(root) {
+  if (!root) return;
+  root.querySelectorAll("img").forEach(img => {
+    const src = img.getAttribute("src") || "";
+    if (!/^\/(raw|s)\//.test(src) || img.dataset.hydrated) return;
+    img.dataset.hydrated = "1";
+    // 预览是滚动容器，正文一长，末尾的图会因为 loading=lazy 一直不加载，
+    // 看起来就像"图传上去了但不显示"。自己文章里的图直接 eager 拉。
+    img.loading = "eager";
+    img.onerror = () => {
+      const ph = document.createElement("div");
+      ph.className = "img-miss";
+      ph.textContent = "图片加载失败：" + (img.getAttribute("alt") || src) + "（文件可能未公开或已删除）";
+      img.replaceWith(ph);
+    };
+    if (!state.token) return;                 // 匿名只能靠文件本身是 public
+    const cached = imgBlobCache.get(src);
+    if (cached) { img.src = cached; return; }
+    fetch(src, { headers: { Authorization: "Bearer " + state.token } })
+      .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        imgBlobCache.set(src, url);
+        img.src = url;
+      })
+      .catch(() => { /* 交给 onerror 兜底 */ });
+  });
+}
+
+function mdSafeUrl(u) {
+  const s = String(u || "").trim();
+  if (/^(https?:\/\/|mailto:|\/|#)/i.test(s)) return s;
+  return "#";
+}
+
+function mdInline(escaped) {
+  const codes = [];
+  let s = escaped.replace(/`([^`]+)`/g, (m, c) => {
+    codes.push(c);
+    return "\u0000" + (codes.length - 1) + "\u0000";
+  });
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g,
+    (m, alt, u) => `<img src="${mdSafeUrl(u)}" alt="${alt}" loading="lazy">`);
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g,
+    (m, t, u) => `<a href="${mdSafeUrl(u)}" target="_blank" rel="noopener">${t}</a>`);
+  s = s.replace(/(\*\*|__)([\s\S]+?)\1/g, "<strong>$2</strong>");
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  s = s.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
+  s = s.replace(/\u0000(\d+)\u0000/g, (m, i) => `<code>${codes[Number(i)]}</code>`);
+  return s;
+}
+
+function mdToHtml(src) {
+  const lines = String(src || "").replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  const hRe = /^(#{1,6})\s+(.*)$/;
+  const ulRe = /^\s*[-*+]\s+(.*)$/;
+  const olRe = /^\s*\d+[.)]\s+(.*)$/;
+  const hrRe = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
+  const blank = l => !l.trim();
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\s*```/.test(line)) {                       // 围栏代码块
+      i++;
+      const buf = [];
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++;
+      out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);
+      continue;
+    }
+    if (blank(line)) { i++; continue; }
+    if (hrRe.test(line)) { out.push("<hr>"); i++; continue; }
+
+    const h = line.match(hRe);
+    if (h) {
+      const n = h[1].length;
+      out.push(`<h${n}>${mdInline(esc(h[2]))}</h${n}>`);
+      i++; continue;
+    }
+
+    // 表格：本行有 |，下一行是 |---|---| 这种分隔行
+    if (line.includes("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+      const cells = r => r.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(x => x.trim());
+      const head = cells(line);
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].includes("|") && !blank(lines[i])) { rows.push(cells(lines[i])); i++; }
+      out.push(`<table><thead><tr>${head.map(c => `<th>${mdInline(esc(c))}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows.map(r => `<tr>${r.map(c => `<td>${mdInline(esc(c))}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      continue;
+    }
+
+    if (/^\s*>/.test(line)) {                          // 引用
+      const buf = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) { buf.push(lines[i].replace(/^\s*>\s?/, "")); i++; }
+      out.push(`<blockquote><p>${mdInline(esc(buf.join(" ")))}</p></blockquote>`);
+      continue;
+    }
+
+    if (ulRe.test(line) || olRe.test(line)) {          // 列表
+      const ordered = olRe.test(line);
+      const re = ordered ? olRe : ulRe;
+      const items = [];
+      while (i < lines.length && re.test(lines[i])) { items.push(lines[i].match(re)[1]); i++; }
+      const tag = ordered ? "ol" : "ul";
+      out.push(`<${tag}>${items.map(t => `<li>${mdInline(esc(t))}</li>`).join("")}</${tag}>`);
+      continue;
+    }
+
+    const buf = [];                                    // 普通段落
+    while (i < lines.length && !blank(lines[i]) && !hRe.test(lines[i]) && !ulRe.test(lines[i]) &&
+           !olRe.test(lines[i]) && !hrRe.test(lines[i]) && !/^\s*>/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+      buf.push(lines[i].trim()); i++;
+    }
+    if (!buf.length) { i++; continue; }
+    out.push(`<p>${mdInline(esc(buf.join(" ")))}</p>`);
+  }
+  return out.join("\n");
+}
+
+function enterDir(id) {
+  if (!id) { state.files.parent = null; state.files.chain = []; }
+  else {
+    state.files.parent = id;
+    const hit = state.files.items.find(x => x.id === id);
+    if (hit) state.files.chain = state.files.chain.concat([{ id, name: hit.name }]);
+  }
+  loadFiles().then(renderFiles).catch(e => toast(e.message));
+}
+
+async function mkdir() {
+  askText("新建目录", "目录名", "", "不能和同目录下的东西重名。", async name => {
+    try {
+      await req("/files/dir", { method: "POST", body: { parentId: state.files.parent || 0, name } });
+      toast("目录已创建");
+      await loadFiles(); renderFiles();
+    } catch (e) { toast(e.message, 3500); }
+  });
+}
+
+function setProgress(text, pct) {
+  const info = document.getElementById("uplInfo");
+  const bar = document.getElementById("uplBar");
+  if (!info || !bar) return;
+  info.textContent = text;
+  bar.style.display = pct == null ? "none" : "block";
+  bar.querySelector("i").style.width = (pct || 0) + "%";
+}
+
+async function sha256OfFile(file) {
+  // 大文件算整体 hash 太吃内存，超过 64MB 就跳过，秒传失效但不影响上传
+  if (file.size > 64 * 1024 * 1024) return "";
+  const buf = await file.arrayBuffer();
+  const dig = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(dig)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function uploadFile(file) {
+  if (state.busy) return toast("还有上传在进行");
+  state.busy = true;
+  const parent = state.files.parent;
+  try {
+    if (file.size <= 8 * 1024 * 1024) {
+      setProgress(`上传 ${file.name}（单文件，${fmtSize(file.size)}）`, 0);
+      const fd = new FormData();
+      fd.append("file", file);
+      if (parent) fd.append("parentId", String(parent));
+      fd.append("name", file.name);
+      const d = await req("/files/upload", { method: "POST", form: fd });
+      setProgress(`完成：${d.name}${d.dedup ? "（命中已有内容，未重复占用存储）" : ""}`, 100);
+      toast("上传成功");
+      await loadFiles(); renderFiles();
+      return;
+    }
+
+    const sha = await sha256OfFile(file);
+    setProgress(`准备分片上传 ${file.name}（${fmtSize(file.size)}）…`, 0);
+    const init = await req("/files/upload/init", {
+      method: "POST",
+      body: { name: file.name, size: file.size, parentId: parent || 0, sha256: sha, mime: file.type || "" }
+    });
+    if (init.complete) {
+      setProgress(`秒传完成${init.dedup ? "（命中已有内容）" : ""}`, 100);
+      toast("秒传成功");
+      await loadFiles(); renderFiles();
+      return;
+    }
+    const { uploadId, partSize, totalParts } = init;
+    upCancel = false;
+    upSessionId = uploadId;
+    const cancelBtn = document.getElementById("cancelUp");
+    if (cancelBtn) {
+      cancelBtn.style.display = "inline-block";
+      cancelBtn.onclick = () => {
+        upCancel = true;
+        cancelBtn.style.display = "none";
+        setProgress("正在取消…（已传的分片会被作废）", null);
+      };
+    }
+    for (let i = 1; i <= totalParts; i++) {
+      if (upCancel) throw new Error("__CANCELLED__");
+      const start = (i - 1) * partSize;
+      const blob = file.slice(start, Math.min(start + partSize, file.size));
+      const res = await fetch(`${API}/files/upload/${uploadId}/part/${i}`, {
+        method: "PUT",
+        headers: { "Authorization": "Bearer " + state.token },
+        body: blob
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`第 ${i} 片失败：HTTP ${res.status} ${txt.slice(0, 120)}`);
+      }
+      setProgress(`上传分片 ${i}/${totalParts}`, Math.round(i / totalParts * 90));
+    }
+    setProgress("合并分片并校验内容…", 95);
+    if (upCancel) throw new Error("__CANCELLED__");
+    const done = await req(`/files/upload/${uploadId}/complete`, { method: "POST" });
+    setProgress(`完成：${done.name} ${fmtSize(done.size)}${done.dedup ? "（内容已存在）" : ""}`, 100);
+    toast("分片上传成功");
+    await loadFiles(); renderFiles();
+  } catch (e) {
+    if (e.message === "__CANCELLED__" || upCancel) {
+      // 调 abort 让服务端删掉没传完的会话和临时分片
+      if (upSessionId) { try { await req(`/files/upload/${upSessionId}`, { method: "DELETE" }); } catch (_) { /* 已经清掉了就算了 */ } }
+      setProgress("已取消上传", null);
+      toast("已取消上传");
+    } else {
+      setProgress("上传失败：" + e.message, null);
+      toast(e.message, 4000);
+    }
+  } finally {
+    state.busy = false;
+    upCancel = false;
+    upSessionId = null;
+    const btn = document.getElementById("cancelUp");
+    if (btn) btn.style.display = "none";
+  }
+}
+
+/* ================= 分类与标签 ================= */
+async function loadTerms() {
+  const [tree, tags] = await Promise.all([req("/categories?tree=1"), req("/tags")]);
+  state.terms.cats = flattenTree(tree || []);
+  state.terms.tags = tags || [];
+}
+
+function flattenTree(nodes, level = 0, out = []) {
+  (nodes || []).forEach(n => {
+    out.push({ id: n.id, name: n.name, parentId: n.parentId, depth: level });
+    flattenTree(n.children, level + 1, out);
+  });
+  return out;
+}
+
+function depthOf(cat) { return cat.depth || 0; }
+
+function renderTerms() {
+  const t = state.terms;
+  stage.innerHTML = `
+    <div class="head">
+      <h1>分类与标签</h1>
+      <div class="row">
+        <button class="btn" id="addCat">新建分类</button>
+        <button class="btn" id="addTag">新建标签</button>
+        <button class="btn" id="reload">刷新</button>
+      </div>
+    </div>
+    <div class="split">
+      <div class="card">
+        <h2 style="margin-top:0">分类（树）</h2>
+        ${t.cats.length ? `<ul class="tree">${t.cats.map(c => `
+          <li>
+            <span class="indent">${"　".repeat(c.depth)}${c.depth ? "└" : ""}</span>
+            <span class="grow">${esc(c.name)} <span class="mono">${esc(c.slug || "")}</span></span>
+            <button class="btn sm" data-rencat="${c.id}" data-cname="${esc(c.name)}">改名</button>
+            <button class="btn sm" data-movecat="${c.id}" data-cname="${esc(c.name)}">换父</button>
+            <button class="btn sm" data-delcat="${c.id}">删除</button>
+          </li>`).join("")}</ul>` : `<div class="empty">还没有分类</div>`}
+        <p class="hint">有子分类的父分类不能直接删，得从叶子删起；换父分类时服务端会查环。</p>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">标签</h2>
+        ${t.tags.length ? `<ul class="tree">${t.tags.map(g => `
+          <li>
+            <span class="grow">${esc(g.name)} <span class="pill">${g.postCount} 篇</span></span>
+            <button class="btn sm" data-rentag="${g.id}" data-tname="${esc(g.name)}">改名</button>
+            <button class="btn sm" data-deltag="${g.id}">删除</button>
+          </li>`).join("")}</ul>` : `<div class="empty">还没有标签</div>`}
+        <p class="hint">删标签会从文章的标签里一并移除（外键级联）。改名后文章上的标签跟着变。</p>
+      </div>
+    </div>`;
+
+  document.getElementById("reload").onclick = async () => {
+    try { await loadTerms(); renderTerms(); toast("已刷新"); } catch (e) { toast(e.message); }
+  };
+  document.getElementById("addCat").onclick = () => {
+    askText("新建分类", "分类名", "", "建好后可以再改父分类。", name => {
+      const parentOptions = ["<option value=\"\">作为根分类</option>"]
+        .concat(t.cats.map(c => `<option value="${c.id}">${"　".repeat(c.depth)}${esc(c.name)}</option>`)).join("");
+      const dlg = document.getElementById("dlg");
+      document.getElementById("dlgTitle").textContent = "新建分类：" + name;
+      document.getElementById("dlgBody").innerHTML = `<label class="f">父分类</label><select id="catParent">${parentOptions}</select>`;
+      document.getElementById("dlgFoot").innerHTML = `<button class="btn" id="c">取消</button><button class="btn primary" id="ok">创建</button>`;
+      dlg.showModal();
+      document.getElementById("c").onclick = () => dlg.close();
+      document.getElementById("ok").onclick = async () => {
+        const pid = document.getElementById("catParent").value;
+        try {
+          await req("/categories", { method: "POST", body: { name, parentId: pid ? Number(pid) : 0 } });
+          dlg.close(); await loadTerms(); renderTerms(); toast("分类已创建");
+        } catch (e) { toast(e.message, 3500); }
+      };
+    });
+  };
+  document.getElementById("addTag").onclick = () => {
+    askText("新建标签", "标签名", "", "", async name => {
+      try { await req("/tags", { method: "POST", body: { name } }); await loadTerms(); renderTerms(); toast("标签已创建"); }
+      catch (e) { toast(e.message, 3500); }
+    });
+  };
+  stage.querySelectorAll("[data-delcat]").forEach(b => b.onclick = async () => {
+    if (!confirm("删这个分类？")) return;
+    try { await req(`/categories/${b.dataset.delcat}`, { method: "DELETE" }); await loadTerms(); renderTerms(); toast("已删除"); }
+    catch (e) { toast(e.message, 3500); }
+  });
+  stage.querySelectorAll("[data-deltag]").forEach(b => b.onclick = async () => {
+    if (!confirm("删这个标签？")) return;
+    try { await req(`/tags/${b.dataset.deltag}`, { method: "DELETE" }); await loadTerms(); renderTerms(); toast("已删除"); }
+    catch (e) { toast(e.message, 3500); }
+  });
+
+  stage.querySelectorAll("[data-rencat]").forEach(b => b.onclick = () => {
+    askText("分类改名", "新名字", b.dataset.cname, "slug 不变，只改显示名。", async name => {
+      if (name === b.dataset.cname) return;
+      try { await req(`/categories/${b.dataset.rencat}`, { method: "PUT", body: { name } }); await loadTerms(); renderTerms(); toast("已改名"); }
+      catch (e) { toast(e.message, 3500); }
+    });
+  });
+
+  stage.querySelectorAll("[data-rentag]").forEach(b => b.onclick = () => {
+    askText("标签改名", "新名字", b.dataset.tname, "文章上的标签会跟着变。", async name => {
+      if (name === b.dataset.tname) return;
+      try { await req(`/tags/${b.dataset.rentag}`, { method: "PUT", body: { name } }); await loadTerms(); renderTerms(); toast("已改名"); }
+      catch (e) { toast(e.message, 3500); }
+    });
+  });
+
+  // 换父：下拉里排除自己和自己的子树（服务端还会再查一次环，这里只是少让人选错）
+  stage.querySelectorAll("[data-movecat]").forEach(b => b.onclick = () => {
+    const self = Number(b.dataset.movecat);
+    const opts = [`<option value="0">作为根分类</option>`]
+      .concat(t.cats.filter(c => c.id !== self)
+        .map(c => `<option value="${c.id}">${"　".repeat(c.depth)}${esc(c.name)}</option>`)).join("");
+    const dlg = document.getElementById("dlg");
+    document.getElementById("dlgTitle").textContent = "换父分类 · " + b.dataset.cname;
+    document.getElementById("dlgBody").innerHTML =
+      `<label class="f">新的父分类</label><select id="newParent">${opts}</select>
+       <p class="hint" style="margin-top:8px">不能挂到自己的子分类下，服务端会拒绝并报错。</p>`;
+    document.getElementById("dlgFoot").innerHTML = `<button class="btn" id="mc">取消</button><button class="btn primary" id="mok">保存</button>`;
+    dlg.showModal();
+    document.getElementById("mc").onclick = () => dlg.close();
+    document.getElementById("mok").onclick = async () => {
+      const pid = Number(document.getElementById("newParent").value || "0");
+      try {
+        await req(`/categories/${self}`, { method: "PUT", body: { parentId: pid } });
+        dlg.close(); await loadTerms(); renderTerms(); toast("已换父分类");
+      } catch (e) { toast(e.message, 3500); }
+    };
+  });
+}
+
+/* ================= 搜索 ================= */
+function renderSearch() {
+  const s = state.search;
+  stage.innerHTML = `
+    <div class="head">
+      <h1>搜索</h1>
+      <div class="row">
+        <button class="btn" id="reindex">重建索引</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <input class="grow" id="q" type="search" value="${esc(s.q)}" placeholder="搜标题、正文、摘要（匿名只搜得到公开已发布）">
+        <button class="btn primary" id="doSearch">搜索</button>
+      </div>
+      <div id="hits" style="margin-top:14px">
+        ${s.items.length ? `<table><colgroup><col style="width:70%"><col style="width:30%"></colgroup>
+          <thead><tr><th>结果</th><th>状态</th></tr></thead><tbody>
+          ${s.items.map(h => `<tr><td>${h._formatted && h._formatted.title ? h._formatted.title : esc(h.title)}<div class="mono">${esc(h.slug || "")}</div></td>
+            <td><span class="pill ${h.status === "published" ? "ok" : "warn"}">${esc(h.status || "-")}</span></td></tr>`).join("")}
+          </tbody></table><p class="hint">共 ${s.total} 条</p>`
+          : (s.q ? `<div class="empty">没有命中</div>` : `<div class="empty">输入关键词后回车或点搜索</div>`)}
+      </div>
+    </div>`;
+
+  const run = async () => {
+    const q = document.getElementById("q").value.trim();
+    state.search.q = q;
+    if (!q) return;
+    try {
+      const d = await req("/search?q=" + encodeURIComponent(q));
+      state.search.items = d.items || [];
+      state.search.total = d.total || 0;
+      renderSearch();
+      document.getElementById("q").focus();
+    } catch (e) { toast(e.message); }
+  };
+  document.getElementById("doSearch").onclick = run;
+  document.getElementById("q").onkeydown = ev => { if (ev.key === "Enter") run(); };
+  document.getElementById("reindex").onclick = async () => {
+    if (!confirm("把所有文章重新塞进同步队列？后台每 2 秒推一批。")) return;
+    try { const d = await req("/admin/reindex", { method: "POST" }); toast(`已入队 ${d.enqueued} 篇`); }
+    catch (e) { toast(e.message); }
+  };
+}
+
+/* ================= 运维 ================= */
+async function renderOps() {
+  stage.innerHTML = `
+    <div class="head"><h1>运维</h1></div>
+    <div class="card">
+      <h2 style="margin-top:0">清理任务</h2>
+      <p class="hint">后台每 12 小时自动跑一次，启动时也跑。这里可以手工触发，立刻处理：回收站里软删超 30 天的节点（连同子树）
+      与文章（连同版本记录）、超过 24 小时没传完的分片会话、没有版本引用的孤儿对象。</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="runM">立即清理</button>
+        <button class="btn" id="checkReady">检查依赖</button>
+      </div>
+      <pre class="mono" id="out" style="margin-top:12px;white-space:pre-wrap"></pre>
+    </div>`;
+
+  document.getElementById("runM").onclick = async () => {
+    const btn = document.getElementById("runM");
+    btn.disabled = true;
+    try {
+      const d = await req("/admin/run-maintenance", { method: "POST" });
+      document.getElementById("out").textContent = JSON.stringify(d, null, 2);
+      toast("清理完成");
+    } catch (e) { document.getElementById("out").textContent = e.message; }
+    finally { btn.disabled = false; }
+  };
+  document.getElementById("checkReady").onclick = async () => {
+    try {
+      const res = await fetch("/readyz");
+      document.getElementById("out").textContent = await res.text();
+    } catch (e) { document.getElementById("out").textContent = e.message; }
+  };
+}
+
+/* ================= 启动 ================= */
+async function boot() {
+  renderWho();
+  if (!state.token) { render(); return; }
+  try {
+    await loadTerms();
+    await loadPosts();
+    go("posts");
+  } catch (e) {
+    if (/401|登录/.test(e.message)) { setToken(""); render(); return; }
+    toast("加载失败：" + e.message);
+    render();
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

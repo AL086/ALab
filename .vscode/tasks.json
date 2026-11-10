@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "go: run",
+      "type": "shell",
+      "command": "go run ./cmd/server",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "go: build",
+      "type": "shell",
+      "command": "go build -o bin/server.exe ./cmd/server",
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "go: test",
+      "type": "shell",
+      "command": "go test ./... -v",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "go: tidy",
+      "type": "shell",
+      "command": "go mod tidy",
+      "problemMatcher": []
+    }
+  ]
+}

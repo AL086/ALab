@@ -1,0 +1,32 @@
+# 可执行文件
+/server
+/server.exe
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# 环境变量
+.env
+.env.local
+
+# IDE
+.idea/
+*.iml
+
+# 运行产物
+/tmp/
+*.log
+*.zip
+archives/
+objects/
+trash/
+
+# Go
+/vendor/
+
+# 装机脚本生成的预填值（含口令）
+install.env
+app.env
+*.tar.gz

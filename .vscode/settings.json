@@ -1,0 +1,38 @@
+{
+  "go.useLanguageServer": true,
+  "go.formatTool": "default",
+  "go.toolsManagement.autoUpdate": true,
+  "go.testFlags": ["-v"],
+  "go.coverOnSingleTest": true,
+  "gopls": {
+    "ui.semanticTokens": true,
+    "ui.diagnostic.staticcheck": true,
+    "ui.completion.usePlaceholders": true,
+    "ui.completion.completeFunctionCalls": true,
+    "formatting.gofumpt": false,
+    "analyses": {
+      "unusedparams": true,
+      "shadow": true,
+      "nilness": true
+    }
+  },
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4
+  },
+  "[go.mod]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "go.diagnostic.vulncheck": "off",
+  "files.eol": "\n",
+  "files.associations": {
+    "*.tmpl": "html"
+  }
+}

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>初始化配置 · 知识库</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232c5a58'/%3E%3Cpath d='M5 17c2.2-6 5.3-6 7.5 0M12.5 17c2.2-6 5.3-6 7.5 0' stroke='%23f6f1e9' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f1e9; --card:#fffdf9; --line:#e4dccd; --ink:#241f1a; --muted:#6b665e;
+  --accent:#2c5a58; --accent-soft:#e7efee; --danger:#a6392f; --ok:#2f6b45;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 "Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 120px}
+header h1{font-size:21px;margin:0 0 4px}
+header p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+.banner{border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:13.5px;line-height:1.55}
+.banner.warn{background:#fdf1ec;border:1px solid #eccfc6;color:#7d3126}
+.banner.info{background:var(--accent-soft);border:1px solid #cfdedc;color:#244b49}
+.meta{font-size:12.5px;color:var(--muted);margin:0 0 14px;word-break:break-all}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+.badge{font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:#fff}
+.badge.on{border-color:#bcd6c6;background:#eef6f0;color:var(--ok)}
+.badge.off{color:#9a938a}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 2px}
+.card .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.grid .full{grid-column:1 / -1}
+label{display:block;font-size:12.5px;color:#4a443d;margin-bottom:4px}
+input[type=text],input[type=password],input[type=number],select{
+  width:100%;padding:9px 10px;font-size:16px;color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;background:#fff;outline:none}
+input:focus{border-color:#8fb3b0;box-shadow:0 0 0 3px #eef4f4}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px}
+.check input{width:18px;height:18px}
+.row{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.btn{padding:9px 14px;font-size:13.5px;border-radius:8px;border:1px solid var(--line);
+  background:#fff;color:var(--ink);cursor:pointer;min-height:38px}
+.btn:hover{border-color:#c9c0b0}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#f7f3ec;font-weight:600}
+.btn.primary:disabled{opacity:.55;cursor:not-allowed}
+.btn.ghost{background:transparent}
+.result{font-size:12.5px;margin-left:2px}
+.result.ok{color:var(--ok)}
+.result.bad{color:var(--danger)}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.55}
+footer{position:fixed;left:0;right:0;bottom:0;background:rgba(246,241,233,.96);
+  border-top:1px solid var(--line);padding:10px 16px 14px}
+footer .in{max-width:760px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+footer .msg{flex:1 1 200px;min-width:0;font-size:12.5px;color:var(--muted)}
+footer .msg.bad{color:var(--danger)}
+footer .msg.ok{color:var(--ok)}
+@media (max-width:600px){
+  .grid{grid-template-columns:1fr}
+  header h1{font-size:19px}
+  .wrap{padding:16px 12px 130px}
+  footer .in{flex-direction:column;align-items:stretch}
+  footer .btn{width:100%}
+}
+.overlay{position:fixed;inset:0;background:rgba(36,31,26,.55);display:none;
+  align-items:center;justify-content:center;padding:24px;z-index:9}
+.overlay.on{display:flex}
+.overlay .box{background:#fffdf9;border-radius:12px;padding:22px;max-width:420px;width:100%}
+.overlay h2{font-size:17px;margin:0 0 8px}
+.overlay p{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>初始化配置</h1>
+    <p>填完下面四组信息、每项都测通之后，才会写配置并启动服务。没有通过的项不会被偷偷写进去。</p>
+    <div class="banner warn" id="reason" hidden></div>
+    <div class="banner info" id="welcome"></div>
+    <div class="meta" id="envpath"></div>
+    <div class="badges" id="detect"></div>
+  </header>
+
+  <section class="card" data-kind="app">
+    <h2>应用</h2>
+    <p class="sub">这个服务对外用哪个端口、访问地址写什么（生成分享链接、正文插图都用它）</p>
+    <div class="grid">
+      <div><label for="port">端口</label><input id="port" type="number" min="1" max="65535" value="8080"></div>
+      <div><label for="publicBaseUrl">公开访问地址</label><input id="publicBaseUrl" type="text" placeholder="http://192.168.10.11:8080"></div>
+      <div><label for="adminUser">管理员账号</label><input id="adminUser" type="text" value="admin"></div>
+      <div><label for="adminPassword">管理员口令（至少 6 位）</label><input id="adminPassword" type="password" autocomplete="new-password"></div>
+    </div>
+  </section>
+
+  <section class="card" data-kind="postgres">
+    <h2>PostgreSQL</h2>
+    <p class="sub">文章、文件元数据、标签都存在这里。库不存在的话，点保存会自动建库。</p>
+    <div class="grid">
+      <div><label for="dbHost">主机</label><input id="dbHost" type="text" value="127.0.0.1"></div>
+      <div><label for="dbPort">端口</label><input id="dbPort" type="number" value="5432"></div>
+      <div><label for="dbName">库名</label><input id="dbName" type="text" value="kb"></div>
+      <div><label for="dbUser">用户</label><input id="dbUser" type="text" value="kbuser"></div>
+      <div class="full"><label for="dbPassword">口令</label><input id="dbPassword" type="password" autocomplete="new-password"></div>
+      <div class="full">
+        <label for="databaseUrl">或直接给完整 DSN（云数据库 sslmode=require 时填这个，填了上面的就忽略）</label>
+        <input id="databaseUrl" type="text" placeholder="postgres://user:pass@host:5432/kb?sslmode=disable">
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" data-test="postgres" type="button">测试连接</button>
+      <span class="result" data-result="postgres"></span>
+    </div>
+  </section>
+
+  <section class="card" data-kind="minio">
+    <h2>对象存储（MinIO / S3）</h2>
+    <p class="sub">文件原件放这里，数据库只存 sha256 和引用计数。桶不存在会自动创建。</p>
+    <div class="grid">
+      <div class="full"><label for="s3Endpoint">Endpoint</label><input id="s3Endpoint" type="text" placeholder="http://127.0.0.1:9000"></div>
+      <div><label for="s3AccessKey">Access Key</label><input id="s3AccessKey" type="text"></div>
+      <div><label for="s3SecretKey">Secret Key</label><input id="s3SecretKey" type="password" autocomplete="new-password"></div>
+      <div><label for="s3Bucket">桶名</label><input id="s3Bucket" type="text" value="kb-files"></div>
+      <div>
+        <label>协议</label>
+        <div class="check"><input id="s3UseSSL" type="checkbox"><span>用 HTTPS 连对象存储</span></div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" data-test="minio" type="button">测试连接</button>
+      <span class="result" data-result="minio"></span>
+    </div>
+  </section>
+
+  <section class="card" data-kind="meili">
+    <h2>Meilisearch</h2>
+    <p class="sub">全文搜索。索引不存在会自动建，字段配置每次启动都会对齐。</p>
+    <div class="grid">
+      <div class="full"><label for="meiliHost">地址</label><input id="meiliHost" type="text" placeholder="http://127.0.0.1:7700"></div>
+      <div><label for="meiliApiKey">Master / API Key</label><input id="meiliApiKey" type="password" autocomplete="new-password"></div>
+      <div><label for="meiliIndex">索引名</label><input id="meiliIndex" type="text" value="kb_search"></div>
+    </div>
+    <div class="row">
+      <button class="btn" data-test="meili" type="button">测试连接</button>
+      <span class="result" data-result="meili"></span>
+    </div>
+    <p class="hint" id="dirs" hidden></p>
+  </section>
+</div>
+
+<footer>
+  <div class="in">
+    <div class="msg" id="msg">还没有检测。建议先把每一项都点一次「测试连接」。</div>
+    <button class="btn ghost" id="testAll" type="button">全部检测</button>
+    <button class="btn primary" id="apply" type="button">保存并启动</button>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay">
+  <div class="box">
+    <h2 id="ovTitle">初始化完成</h2>
+    <p id="ovText">正在启动服务，页面会自动跳转…</p>
+  </div>
+</div>
+
+<script>
+const F = {
+  port: "port", publicBaseUrl: "publicBaseUrl", adminUser: "adminUser", adminPassword: "adminPassword",
+  dbHost: "dbHost", dbPort: "dbPort", dbName: "dbName", dbUser: "dbUser", dbPassword: "dbPassword",
+  databaseUrl: "databaseUrl",
+  s3Endpoint: "s3Endpoint", s3AccessKey: "s3AccessKey", s3SecretKey: "s3SecretKey",
+  s3Bucket: "s3Bucket", meiliHost: "meiliHost", meiliApiKey: "meiliApiKey", meiliIndex: "meiliIndex"
+};
+
+function $(id) { return document.getElementById(id); }
+function msg(text, cls) {
+  const el = $("msg");
+  el.textContent = text;
+  el.className = "msg" + (cls ? " " + cls : "");
+}
+function readValues() {
+  const v = {};
+  for (const k in F) v[k] = ($(F[k]).value || "").trim();
+  v.s3UseSSL = $("s3UseSSL").checked;
+  return v;
+}
+function fillValues(v) {
+  for (const k in F) if (v[k] !== undefined && v[k] !== null && v[k] !== "") $(F[k]).value = v[k];
+  if (v.s3UseSSL) $("s3UseSSL").checked = true;
+}
+function setResult(kind, ok, text) {
+  const el = document.querySelector('[data-result="' + kind + '"]');
+  if (!el) return;
+  el.className = "result " + (ok ? "ok" : "bad");
+  el.textContent = (ok ? "✓ " : "✕ ") + text;
+}
+async function testOne(kind, silent) {
+  if (!silent) msg("正在测 " + kind + "…");
+  const r = await fetch("/api/setup/test", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind: kind, values: readValues() })
+  });
+  let d = {};
+  try { d = await r.json(); } catch (e) { d = { ok: false, message: "返回不是 JSON（HTTP " + r.status + "）" }; }
+  setResult(kind, !!d.ok, d.message || "");
+  return !!d.ok;
+}
+
+document.querySelectorAll("[data-test]").forEach(btn => {
+  btn.onclick = async () => {
+    const kind = btn.dataset.test;
+    btn.disabled = true;
+    const ok = await testOne(kind, false);
+    btn.disabled = false;
+    if (ok) msg(kind + " 连接成功。", "ok");
+  };
+});
+
+$("testAll").onclick = async () => {
+  const kinds = ["postgres", "minio", "meili"];
+  msg("正在逐项检测…");
+  const res = [];
+  for (const k of kinds) res.push([k, await testOne(k, true)]);
+  const bad = res.filter(x => !x[1]).map(x => x[0]);
+  if (bad.length === 0) msg("三项都通过，可以保存并启动了。", "ok");
+  else msg("还有没通过的项：" + bad.join("、"), "bad");
+};
+
+let applying = false;
+$("apply").onclick = async () => {
+  if (applying) return;
+  applying = true;
+  $("apply").disabled = true;
+  msg("正在校验并写入配置…");
+  try {
+    const r = await fetch("/api/setup/apply", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(readValues())
+    });
+    let d = {};
+    try { d = await r.json(); } catch (e) { d = { ok: false, message: "返回不是 JSON（HTTP " + r.status + "）" }; }
+    if (!d.ok) {
+      msg(d.message || "保存失败", "bad");
+      applying = false; $("apply").disabled = false;
+      return;
+    }
+    $("overlay").classList.add("on");
+    $("ovText").textContent = d.message || "正在启动服务…";
+    waitReady();
+  } catch (e) {
+    msg("请求失败：" + e.message, "bad");
+    applying = false; $("apply").disabled = false;
+  }
+};
+
+// 向导把监听交还给正式服务后会有一段空白期，这里轮询 /readyz 等它起来
+async function waitReady() {
+  const started = Date.now();
+  let lastErr = "";
+  while (Date.now() - started < 45000) {
+    try {
+      const r = await fetch("/readyz", { cache: "no-store" });
+      if (r.ok) { location.replace("/"); return; }
+      lastErr = "HTTP " + r.status;
+    } catch (e) { lastErr = e.message; }
+    await new Promise(res => setTimeout(res, 1200));
+  }
+  $("ovTitle").textContent = "配置已写入，但服务还没起来";
+  $("ovText").textContent = "看日志确认依赖是否都在跑（journalctl -u blog-kb）；也可以刷新本页重新配置。" + (lastErr ? "（" + lastErr + "）" : "");
+}
+
+(async function init() {
+  try {
+    const r = await fetch("/api/setup/state", { cache: "no-store" });
+    const st = await r.json();
+    fillValues(st.values || {});
+    if (!$("publicBaseUrl").value) {
+      $("publicBaseUrl").value = location.protocol + "//" + location.hostname + ":" + ($("port").value || "8080");
+    }
+    $("envpath").textContent = "配置将写入：" + (st.envPath || ".env");
+    if (st.reason) {
+      $("reason").hidden = false;
+      $("reason").textContent = "上次启动没成功：" + st.reason;
+    }
+    const det = st.detected || {};
+    const names = { postgres: "PostgreSQL", minio: "对象存储", meili: "Meilisearch" };
+    const box = $("detect");
+    box.innerHTML = Object.keys(names).map(k => {
+      const on = !!det[k];
+      return '<span class="badge ' + (on ? "on" : "off") + '">' + names[k] + (on ? " 已在运行" : " 未探测到") + "</span>";
+    }).join("");
+    if (st.hasHints) {
+      $("welcome").textContent = "已读取装机脚本生成的预填值（账号口令已自动填好），确认无误就能直接用。";
+    } else {
+      $("welcome").textContent = "如果没有预填值，按 README 里「依赖安装」一节给出的地址和口令填。每项都能单独点「测试连接」。";
+    }
+    if (st.dirs) {
+      $("dirs").hidden = false;
+      $("dirs").textContent = "数据目录：" + st.dirs;
+    }
+  } catch (e) {
+    msg("读取初始状态失败：" + e.message, "bad");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库 · 文章与文件</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232c5a58'/%3E%3Cpath d='M5 17c2.2-6 5.3-6 7.5 0M12.5 17c2.2-6 5.3-6 7.5 0' stroke='%23f6f1e9' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#faf7f2; --card:#fffdf9; --ink:#1e2226; --muted:#6b665e; --line:#e6ddd0;
+  --accent:#2c5a58; --accent-soft:#e7f0ee; --warn:#9a5b1f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:15px/1.65 "Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font:inherit;cursor:pointer}
+input,button,dialog{font-family:inherit}
+
+/* ---------- 顶栏 ---------- */
+.top{position:sticky;top:0;z-index:5;background:rgba(250,247,242,.92);
+  border-bottom:1px solid var(--line);backdrop-filter:saturate(120%) blur(6px)}
+.top-in{max-width:960px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px;letter-spacing:.02em}
+.brand svg{width:22px;height:22px;flex:0 0 22px}
+.brand small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);letter-spacing:.06em}
+.nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.nav a,.nav button{
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  padding:7px 11px;border-radius:6px;font-size:14px;min-height:36px;text-decoration:none
+}
+.nav a:hover,.nav button:hover{background:#f1ece3;color:var(--ink);text-decoration:none}
+.nav .on{color:var(--accent);background:var(--accent-soft);border-color:#cfdedb;font-weight:600}
+.nav .admin{border-color:var(--line);color:var(--ink)}
+
+/* ---------- 版心 ---------- */
+main{max-width:960px;margin:0 auto;padding:22px 16px 64px}
+.read{max-width:720px}
+
+/* ---------- 首屏 ---------- */
+.hero{padding:6px 0 20px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.hero h1{
+  margin:0 0 8px;font-size:26px;line-height:1.35;font-weight:600;letter-spacing:-.01em;
+}
+.hero p{margin:0 0 16px;color:var(--muted);font-size:14px;max-width:46em}
+.searchbar{display:flex;gap:8px;flex-wrap:wrap}
+.searchbar input{
+  flex:1 1 240px;min-width:0;padding:10px 13px;border:1px solid var(--line);
+  border-radius:8px;background:var(--card);font-size:16px
+}
+.searchbar input:focus{outline:2px solid #cfdedb;outline-offset:1px;border-color:#bcd0cd}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 15px;min-height:40px;color:var(--ink)}
+.btn:hover{border-color:#cbbfae}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#f7fbfa}
+.btn.primary:hover{background:#244c4a}
+.btn.sm{padding:5px 10px;min-height:32px;font-size:13px}
+
+/* ---------- 列表 ---------- */
+.sec-head{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.sec-head h2{margin:0;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sec-head .count{font-size:12.5px;color:var(--muted)}
+.filterbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:13px;color:var(--muted)}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);font-size:12.5px}
+.chip.on{color:var(--accent);border-color:#cfdedb;background:var(--accent-soft)}
+
+.post-list{list-style:none;margin:0;padding:0}
+.post-list li{border-bottom:1px solid var(--line)}
+.post-list li:first-child{border-top:1px solid var(--line)}
+/* 整块可点：<a> 铺满一行，封面在左、文字在右；没有封面就只剩文字，不留空框 */
+.post-card{display:flex;gap:14px;align-items:flex-start;padding:14px 6px;text-decoration:none;color:inherit}
+.post-card:hover{background:#fdfbf7;text-decoration:none}
+.post-card .cover{flex:0 0 132px;width:132px;height:76px;border-radius:6px;overflow:hidden;
+  background:#f1eeea;display:block}
+.post-card .cover img{width:100%;height:100%;object-fit:cover;display:block}
+.post-card .post-body{display:block;flex:1 1 auto;min-width:0}
+.post-title{display:block;font-size:16.5px;font-weight:600;line-height:1.42;margin:0 0 4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.post-sum{color:var(--muted);font-size:13.2px;line-height:1.5;margin:0 0 6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.3px;color:var(--muted)}
+.post-meta .tag{color:var(--accent)}
+.dot{color:#c3b9a9}
+
+/* ---------- 文章正文 ---------- */
+.article-head{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:20px}
+.article-head h1{margin:0 0 10px;font-size:28px;line-height:1.3;font-weight:600;letter-spacing:-.01em}
+.article-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--muted);align-items:center}
+.prose{
+  font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+  font-size:17px;line-height:1.9;color:#23262a
+}
+.prose p{margin:0 0 1.05em}
+.prose h1,.prose h2,.prose h3,.prose h4{
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.4;
+  margin:1.5em 0 .6em;font-weight:600
+}
+.prose h1{font-size:22px}.prose h2{font-size:19px}.prose h3{font-size:16.5px}.prose h4{font-size:15.5px}
+.prose ul,.prose ol{margin:0 0 1.05em;padding-left:1.4em}
+.prose li{margin:.2em 0}
+.prose blockquote{margin:0 0 1.05em;padding:.2em 0 .2em 1em;border-left:3px solid #cfdedb;color:#514c45}
+.prose code{background:#f0ebe1;border-radius:3px;padding:1px 5px;
+  font-family:Consolas,"Cascadia Mono",monospace;font-size:13.5px}
+.prose pre{background:#f4efe6;border:1px solid var(--line);border-radius:8px;
+  padding:13px 15px;overflow:auto;margin:0 0 1.2em}
+.prose pre code{background:none;padding:0;font-size:13px;line-height:1.6}
+.prose hr{border:0;border-top:1px solid var(--line);margin:1.8em 0}
+.prose table{border-collapse:collapse;width:100%;margin:0 0 1.2em;font-family:"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px}
+.prose th,.prose td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+.prose img{max-width:100%;height:auto;border-radius:6px}
+.img-miss{border:1px dashed #d8cbb9;border-radius:6px;background:#fbf7ef;color:#8a7a5c;
+  padding:8px 10px;font-size:13px;margin:0 0 12px}
+.prose a{color:var(--accent);border-bottom:1px solid #cfdedb}
+
+/* ---------- 文件仓库 ---------- */
+.breadcrumb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.breadcrumb button{background:none;border:0;padding:2px 0;color:var(--accent);min-height:32px}
+.breadcrumb .sep{color:#c3b9a9}
+.file-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.file-table col.c1{width:56%}.file-table col.c2{width:14%}.file-table col.c3{width:30%}
+.file-table th{font-size:12.5px;color:var(--muted);font-weight:600;text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+.file-table td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.file-table tr:hover td{background:#fdfbf7}
+.file-name{display:flex;align-items:center;gap:8px;min-width:0}
+.file-name svg{width:17px;height:17px;flex:0 0 17px;fill:#a9a196}
+.file-name svg.dir{fill:var(--accent)}
+.file-name .n{overflow-wrap:anywhere}
+.file-table td.ops{font-size:13px}
+.file-table td.ops a,.file-table td.ops button{margin:0 8px 0 0;color:var(--accent);background:none;border:0;padding:0;font-size:13px;text-decoration:none}
+.file-table td.ops a:hover,.file-table td.ops button:hover{text-decoration:underline}
+
+/* ---------- 空态 / 提示 ---------- */
+.empty{padding:30px 4px;color:var(--muted);font-size:14px;text-align:center}
+.notice{
+  border:1px dashed #d8cdbd;background:#fdfaf4;border-radius:8px;padding:12px 14px;
+  font-size:13.5px;color:var(--muted);margin:0 0 14px
+}
+.notice b{color:var(--ink);font-weight:600}
+
+/* ---------- 弹窗 / 提示条 ---------- */
+dialog{border:1px solid var(--line);border-radius:12px;padding:0;max-width:min(94vw,420px);width:100%;background:var(--card)}
+dialog::backdrop{background:rgba(30,34,38,.35)}
+.dlg-head{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:15px}
+.dlg-body{padding:16px}
+.dlg-foot{padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.dlg-body label{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+.dlg-body input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:16px}
+.dlg-body .err{color:#9b2c2c;font-size:13px;margin-top:8px;min-height:18px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#25302f;color:#f6f2ea;
+  padding:10px 16px;border-radius:8px;font-size:14px;max-width:min(90vw,520px);opacity:0;
+  pointer-events:none;transition:opacity .18s;z-index:20}
+.toast.on{opacity:1}
+
+footer{max-width:960px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font-size:12.5px;
+  border-top:1px solid var(--line);padding-top:16px}
+footer .row{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+
+@media (min-width:820px){
+  main{padding:30px 24px 80px}
+  .hero h1{font-size:31px}
+  .post-title{font-size:19px}
+  .article-head h1{font-size:31px}
+}
+@media (max-width:600px){
+  .post-card{gap:10px;padding:12px 2px}
+  .post-card .cover{flex-basis:96px;width:96px;height:60px}
+  .post-title{font-size:15.5px}
+  .post-sum{font-size:12.8px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/" aria-label="回到首页">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#2c5a58"></rect>
+        <path d="M5 17c2.2-6 5.3-6 7.5 0M12.5 17c2.2-6 5.3-6 7.5 0" stroke="#f6f1e9" stroke-width="1.6" fill="none"></path></svg>
+      <span>知识库<small>文章 · 文件</small></span>
+    </a>
+    <nav class="nav">
+      <a href="#/" data-nav="posts">文章</a>
+      <a href="#/files" data-nav="files">仓库</a>
+      <a href="#/search" data-nav="search">搜索</a>
+      <button id="authBtn" type="button">登录</button>
+      <a class="admin" href="/app">后台</a>
+    </nav>
+  </div>
+</header>
+
+<main id="stage"></main>
+
+<footer>
+  <div class="row">
+    <span>Go + Gin · PostgreSQL · MinIO · Meilisearch</span>
+    <span><a href="/app">进入后台管理</a></span>
+  </div>
+  <p style="margin:8px 0 0">文章只展示已发布且公开的内容；文件仓库匿名只看得到公开文件，登录后才是你自己的全部目录。</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="dlg">
+  <div class="dlg-head" id="dlgTitle">登录</div>
+  <div class="dlg-body" id="dlgBody"></div>
+  <div class="dlg-foot" id="dlgFoot"></div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ================= 基础 ================= */
+const API = "/api/v1";
+const LS_KEY = "kb.token";       // 和后台共用同一个 token，登录一次两个页面都认
+const stage = document.getElementById("stage");
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+
+const state = {
+  token: localStorage.getItem(LS_KEY) || "",
+  view: "posts",
+  posts: [],
+  postsTotal: 0,
+  tag: "",                       // 当前标签筛选（slug 或名字）
+  article: null,
+  files: { parent: null, items: [], total: 0, parentOf: {} },
+  search: { q: "", items: [], total: 0 },
+};
+
+function toast(msg, ms = 2200) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("on"), ms);
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+function fmtSize(n) {
+  if (n == null) return "—";
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+  if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + " MB";
+  return (n / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+function fmtDate(s) {
+  if (s == null || s === "") return "";
+  let v = s;
+  // 搜索命中的 publishedAt 是 Meili 里的 unix 秒，直接 new Date() 会变成 1970
+  if (typeof v === "number" || /^\d+$/.test(String(v))) {
+    let n = Number(v);
+    if (n < 1e12) n *= 1000;
+    v = n;
+  }
+  const d = new Date(v);
+  if (isNaN(d)) return String(s).slice(0, 10);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function isPreviewable(name) {
+  const ext = (name || "").toLowerCase().split(".").pop();
+  return ["txt", "md", "log", "json", "csv", "yaml", "yml", "sh",
+          "png", "jpg", "jpeg", "gif", "webp", "pdf"].includes(ext);
+}
+
+async function req(path, { method = "GET", body } = {}) {
+  const headers = {};
+  if (state.token) headers.Authorization = "Bearer " + state.token;
+  let payload;
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    payload = JSON.stringify(body);
+  }
+  const res = await fetch(API + path, { method, headers, body: payload });
+  let json;
+  try { json = await res.json(); } catch (e) { throw new Error(`HTTP ${res.status}`); }
+  if (json.code !== 0) throw new Error(json.message || `请求失败（${json.code}）`);
+  return json.data;
+}
+
+function setToken(t) {
+  state.token = t || "";
+  if (t) localStorage.setItem(LS_KEY, t); else localStorage.removeItem(LS_KEY);
+  renderAuthBtn();
+}
+
+function renderAuthBtn() {
+  const btn = document.getElementById("authBtn");
+  if (state.token) {
+    btn.textContent = "退出";
+    btn.onclick = () => { setToken(""); toast("已退出登录"); route(); };
+  } else {
+    btn.textContent = "登录";
+    btn.onclick = askLogin;
+  }
+}
+
+/* ================= 登录 ================= */
+function askLogin() {
+  const dlg = document.getElementById("dlg");
+  document.getElementById("dlgTitle").textContent = "登录（站长）";
+  document.getElementById("dlgBody").innerHTML = `
+    <label for="u">用户名</label>
+    <input id="u" type="text" value="admin" autocomplete="username">
+    <div style="height:10px"></div>
+    <label for="p">密码</label>
+    <input id="p" type="password" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <p style="font-size:12.5px;color:#6b665e;margin:10px 0 0">
+      登录后可以看到自己的全部文件目录，并进入后台。<br>匿名访客只能看到标为公开的文章与文件。
+    </p>`;
+  document.getElementById("dlgFoot").innerHTML =
+    `<button class="btn" id="cancelLogin">取消</button>
+     <button class="btn primary" id="doLogin">登录</button>`;
+  dlg.showModal();
+  document.getElementById("p").focus();
+  document.getElementById("cancelLogin").onclick = () => dlg.close();
+  document.getElementById("doLogin").onclick = async () => {
+    const btn = document.getElementById("doLogin");
+    btn.disabled = true;
+    try {
+      const d = await req("/auth/login", {
+        method: "POST",
+        body: { username: document.getElementById("u").value.trim(),
+                password: document.getElementById("p").value }
+      });
+      setToken(d.token);
+      dlg.close();
+      toast("登录成功");
+      route();
+    } catch (e) {
+      document.getElementById("loginErr").textContent = e.message;
+    } finally { btn.disabled = false; }
+  };
+}
+
+/* ================= Markdown 渲染（内联，不依赖外网） ================= */
+function mdSafeUrl(u) {
+  const s = String(u || "").trim();
+  if (/^(https?:\/\/|mailto:|\/|#)/i.test(s)) return s;
+  return "#";
+}
+
+function mdInline(escaped) {
+  const codes = [];
+  let s = escaped.replace(/`([^`]+)`/g, (m, c) => {
+    codes.push(c);
+    return "\u0000" + (codes.length - 1) + "\u0000";
+  });
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g,
+    (m, alt, u) => `<img src="${mdSafeUrl(u)}" alt="${alt}" loading="lazy">`);
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g,
+    (m, t, u) => `<a href="${mdSafeUrl(u)}" target="_blank" rel="noopener">${t}</a>`);
+  s = s.replace(/(\*\*|__)([\s\S]+?)\1/g, "<strong>$2</strong>");
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  s = s.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
+  s = s.replace(/\u0000(\d+)\u0000/g, (m, i) => `<code>${codes[Number(i)]}</code>`);
+  return s;
+}
+
+function mdToHtml(src) {
+  const lines = String(src || "").replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  const hRe = /^(#{1,6})\s+(.*)$/;
+  const ulRe = /^\s*[-*+]\s+(.*)$/;
+  const olRe = /^\s*\d+[.)]\s+(.*)$/;
+  const hrRe = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
+  const blank = l => !l.trim();
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^\s*```/.test(line)) {
+      i++;
+      const buf = [];
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++;
+      out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`);
+      continue;
+    }
+    if (blank(line)) { i++; continue; }
+    if (hrRe.test(line)) { out.push("<hr>"); i++; continue; }
+    const h = line.match(hRe);
+    if (h) {
+      const n = h[1].length;
+      out.push(`<h${n}>${mdInline(esc(h[2]))}</h${n}>`);
+      i++; continue;
+    }
+    if (line.includes("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+      const cells = r => r.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(x => x.trim());
+      const head = cells(line);
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].includes("|") && !blank(lines[i])) { rows.push(cells(lines[i])); i++; }
+      out.push(`<table><thead><tr>${head.map(c => `<th>${mdInline(esc(c))}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows.map(r => `<tr>${r.map(c => `<td>${mdInline(esc(c))}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      continue;
+    }
+    if (/^\s*>/.test(line)) {
+      const buf = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) { buf.push(lines[i].replace(/^\s*>\s?/, "")); i++; }
+      out.push(`<blockquote><p>${mdInline(esc(buf.join(" ")))}</p></blockquote>`);
+      continue;
+    }
+    if (ulRe.test(line) || olRe.test(line)) {
+      const ordered = olRe.test(line);
+      const re = ordered ? olRe : ulRe;
+      const items = [];
+      while (i < lines.length && re.test(lines[i])) { items.push(lines[i].match(re)[1]); i++; }
+      const tag = ordered ? "ol" : "ul";
+      out.push(`<${tag}>${items.map(t => `<li>${mdInline(esc(t))}</li>`).join("")}</${tag}>`);
+      continue;
+    }
+    const buf = [];
+    while (i < lines.length && !blank(lines[i]) && !hRe.test(lines[i]) && !ulRe.test(lines[i]) &&
+           !olRe.test(lines[i]) && !hrRe.test(lines[i]) && !/^\s*>/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+      buf.push(lines[i].trim()); i++;
+    }
+    if (!buf.length) { i++; continue; }
+    out.push(`<p>${mdInline(esc(buf.join(" ")))}</p>`);
+  }
+  return out.join("\n");
+}
+
+/* ================= 数据 ================= */
+async function loadPosts() {
+  const q = state.tag ? `&tag=${encodeURIComponent(state.tag)}` : "";
+  const d = await req(`/posts?status=published&pageSize=50${q}`);
+  state.posts = d.items || [];
+  state.postsTotal = d.total || 0;
+}
+
+async function loadArticle(id) {
+  state.article = await req(`/posts/${id}`);
+}
+
+async function loadFiles() {
+  if (!state.token) {
+    // 匿名侧只给一层平铺的公开文件（带完整路径），不进目录树
+    const pub = await req("/pub/files?pageSize=200");
+    state.files.items = pub.items || [];
+    state.files.total = pub.total || 0;
+    return;
+  }
+  const parent = state.files.parent;
+  const d = await req(`/files?pageSize=200${parent ? "&parent=" + parent : ""}`);
+  state.files.items = d.items || [];
+  state.files.total = d.total || 0;
+  // 记住"谁是谁的孩子"，面包屑才能一级级往上拼
+  state.files.items.forEach(it => {
+    state.files.parentOf[it.id] = { name: it.name, parentId: it.parentId };
+  });
+}
+
+function fileChain() {
+  const out = [];
+  const seen = new Set();
+  let cur = state.files.parent;
+  while (cur != null && !seen.has(cur)) {
+    seen.add(cur);
+    const rec = state.files.parentOf[cur];
+    out.unshift({ id: cur, name: rec ? rec.name : "#" + cur });
+    cur = rec ? rec.parentId : null;
+  }
+  return out;
+}
+
+async function downloadFile(id, name) {
+  try {
+    const headers = state.token ? { Authorization: "Bearer " + state.token } : {};
+    const res = await fetch(`${API}/files/${id}/download`, { headers });
+    if (!res.ok) throw new Error(`下载失败（HTTP ${res.status}）`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name || "download";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  } catch (e) {
+    toast(e.message, 3500);
+  }
+}
+
+async function previewFile(id) {
+  try {
+    const headers = state.token ? { Authorization: "Bearer " + state.token } : {};
+    const res = await fetch(`${API}/raw/${id}`, { headers });
+    if (!res.ok) throw new Error(res.status === 415 ? "这个类型不支持在线预览，请下载" : `预览失败（HTTP ${res.status}）`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    toast(e.message, 3500);
+  }
+}
+
+async function loadSearch(q) {
+  state.search.q = q;
+  const d = await req(`/search?q=${encodeURIComponent(q)}&pageSize=30`);
+  state.search.items = d.items || [];
+  state.search.total = d.total || 0;
+}
+
+/* ================= 视图 ================= */
+function render() {
+  renderAuthBtn();
+  document.querySelectorAll("[data-nav]").forEach(a =>
+    a.classList.toggle("on", a.dataset.nav === state.view));
+  if (state.view === "posts") renderPosts();
+  else if (state.view === "article") renderArticle();
+  else if (state.view === "files") renderFiles();
+  else if (state.view === "search") renderSearch();
+  else renderPosts();
+}
+
+// 列表摘要：优先用 summary；没写就从不含标记的正文里截一段，避免列表只剩标题
+function excerptOf(p) {
+  const s = (p.summary || "").trim();
+  if (s) return s;
+  const raw = mdToPlainText(p.contentMd || "");
+  return raw.length > 110 ? raw.slice(0, 110).trim() + "…" : raw.trim();
+}
+
+// Markdown 去标记：只为了提摘要，不做完整解析
+function mdToPlainText(src) {
+  return String(src || "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^[#>\-*+~\s]+/gm, "")
+    .replace(/[*_`~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// 文章卡片：整块是一个 <a>，点哪儿都进文章；有封面才出缩略图，没有就不占位。
+// 标签在这里是嵌在 <a> 里的文字（不能再套 <a>），点标签等同点整块。
+function postCard(p, withCover) {
+  const cover = (p.coverUrl || "").trim();
+  const sum = excerptOf(p);
+  const tags = (p.tags || []).map(t => `<span class="tag">#${esc(t)}</span>`).join("");
+  const showCover = withCover !== false && !!cover;
+  return `<a class="post-card${showCover ? " has-cover" : ""}" href="#/post/${p.id}">
+    ${showCover ? `<span class="cover"><img src="${esc(cover)}" alt="" loading="eager" decoding="async"></span>` : ""}
+    <span class="post-body">
+      <span class="post-title">${esc(p.title)}</span>
+      ${sum ? `<span class="post-sum">${esc(sum)}</span>` : ""}
+      <span class="post-meta">
+        <span>${fmtDate(p.publishedAt || p.createdAt)}</span>
+        ${tags ? `<span class="dot">·</span>${tags}` : ""}
+      </span>
+    </span>
+  </a>`;
+}
+
+// 封面图裂了（文件被删/设为私有）就把缩略图整块去掉，别留一个灰方块
+function fixBrokenCovers(root) {
+  root.querySelectorAll(".post-card .cover img").forEach(img => {
+    img.onerror = () => { const c = img.closest(".cover"); if (c) c.remove(); };
+  });
+}
+function renderPosts() {
+  const cards = state.posts.map(p => `<li>${postCard(p)}</li>`).join("");
+
+  stage.innerHTML = `
+    <section class="hero">
+      <h1>把读过的、写下的、攒下的，放在一个能找到的地方。</h1>
+      <p>这里是公开的文章与公开文件。文章只放出已发布且公开的内容；文件仓库匿名只看到公开部分，登录后才是完整目录。</p>
+      <form class="searchbar" id="heroSearch">
+        <input id="q" type="search" placeholder="搜索文章标题、正文、摘要…" autocomplete="off">
+        <button class="btn primary" type="submit">搜索</button>
+        <a class="btn" href="#/files">逛仓库</a>
+      </form>
+    </section>
+
+    <div class="sec-head"><h2>文章</h2><span class="count">共 ${state.postsTotal} 篇</span></div>
+    ${state.tag ? `<div class="filterbar">标签筛选：<span class="chip on">#${esc(state.tag)}</span>
+        <button class="btn sm" id="clearTag" type="button">清除筛选</button></div>` : ""}
+    ${state.posts.length ? `<ul class="post-list">${cards}</ul>`
+      : `<div class="empty">${state.tag ? "这个标签下还没有公开文章。" : "还没有已发布且公开的文章。"}</div>`}
+  `;
+
+  const form = document.getElementById("heroSearch");
+  form.onsubmit = e => {
+    e.preventDefault();
+    const q = document.getElementById("q").value.trim();
+    if (!q) return toast("先输入要搜的词");
+    location.hash = "#/search/" + encodeURIComponent(q);
+  };
+  const clear = document.getElementById("clearTag");
+  if (clear) clear.onclick = () => { state.tag = ""; location.hash = "#/"; };
+  fixBrokenCovers(stage);
+}
+
+function renderArticle() {
+  const p = state.article;
+  if (!p) { state.view = "posts"; return renderPosts(); }
+  const tags = (p.tags || []).map(t =>
+    `<a class="tag" href="#/tag/${encodeURIComponent(t)}">#${esc(t)}</a>`).join(" ");
+  stage.innerHTML = `
+    <p style="margin:0 0 18px"><a href="#/">← 返回文章列表</a></p>
+    <article class="read">
+      <header class="article-head">
+        <h1>${esc(p.title)}</h1>
+        <div class="article-meta">
+          <span>${fmtDate(p.publishedAt || p.createdAt)}</span>
+          ${tags ? `<span class="dot">·</span><span>${tags}</span>` : ""}
+        </div>
+      </header>
+      <div class="prose">${p.contentMd ? mdToHtml(p.contentMd) : `<p style="color:#6b665e">这篇还没有正文。</p>`}</div>
+    </article>
+    <p style="margin:28px 0 0"><a href="#/">← 返回文章列表</a></p>
+  `;
+  // 正文插图（Markdown 里的 ![](/raw/<id>)）可能因为文件被设私有而取不到，
+  // 裂图很难看，换成一句说明；公开图片本来就正常显示。
+  stage.querySelectorAll(".prose img").forEach(img => {
+    img.onerror = () => {
+      const ph = document.createElement("div");
+      ph.className = "img-miss";
+      ph.textContent = "图片加载失败：" + (img.getAttribute("alt") || "未命名") + "（文件未公开或已删除）";
+      img.replaceWith(ph);
+    };
+  });
+}
+
+function renderFiles() {
+  const f = state.files;
+
+  if (!state.token) {
+    // 匿名：平铺的公开文件区
+    const rows = f.items.map(it => {
+      const label = it.path ? `${it.path}/${it.name}` : it.name;
+      return `<tr>
+        <td><div class="file-name">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path></svg>
+          <span class="n">${esc(label)}</span></div></td>
+        <td>${fmtSize(it.size)}</td>
+        <td class="ops">
+          <button type="button" data-dl="${it.id}" data-nm="${esc(it.name)}">下载</button>
+          ${isPreviewable(it.name) ? `<button type="button" data-pv="${it.id}">预览</button>` : ""}
+        </td>
+      </tr>`;
+    }).join("");
+
+    stage.innerHTML = `
+      <div class="sec-head"><h2>公开文件</h2><span class="count">共 ${f.total} 个</span></div>
+      <p class="notice">这里只列站内标为 <b>公开</b> 的文件，每行带完整路径。想查看自己的全部目录（含私有文件），
+        <a href="javascript:void(0)" id="noticeLogin">登录</a>。</p>
+      ${f.items.length ? `
+      <table class="file-table">
+        <colgroup><col class="c1"><col class="c2"><col class="c3"></colgroup>
+        <thead><tr><th>文件</th><th>大小</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>` : `<div class="empty">现在还没有公开文件。登录后在后台把某个文件设为公开，它就会出现在这里。</div>`}
+    `;
+    const tip = document.getElementById("noticeLogin");
+    if (tip) tip.onclick = askLogin;
+    bindFileOps();
+    return;
+  }
+
+  const chain = fileChain();
+  const crumbs = `<button type="button" data-go="0">根目录</button>` +
+    chain.map(c => `<span class="sep">/</span><button type="button" data-go="${c.id}">${esc(c.name)}</button>`).join("");
+
+  const rows = f.items.map(it => {
+    const isDir = it.type === "dir";
+    const icon = isDir
+      ? `<svg class="dir" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>`
+      : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h7l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path></svg>`;
+    const nameCell = isDir
+      ? `<a class="n" href="#/dir/${it.id}">${esc(it.name)}</a>`
+      : `<span class="n">${esc(it.name)}</span>`;
+    const ops = isDir
+      ? `<a href="#/dir/${it.id}">打开</a>`
+      : `<button type="button" data-dl="${it.id}" data-nm="${esc(it.name)}">下载</button>` +
+        (isPreviewable(it.name) ? `<button type="button" data-pv="${it.id}">预览</button>` : "");
+    return `<tr>
+      <td><div class="file-name">${icon}${nameCell}</div></td>
+      <td>${isDir ? "目录" : fmtSize(it.size)}</td>
+      <td class="ops">${ops}</td>
+    </tr>`;
+  }).join("");
+
+  stage.innerHTML = `
+    <div class="sec-head"><h2>文件仓库</h2><span class="count">共 ${f.total} 项</span></div>
+    <p class="notice">已登录，显示你自己的全部目录（含私有文件）。下载与预览都是带着登录态取的，链接不对外暴露。</p>
+    <div class="breadcrumb">${crumbs}</div>
+    ${f.items.length ? `
+    <table class="file-table">
+      <colgroup><col class="c1"><col class="c2"><col class="c3"></colgroup>
+      <thead><tr><th>名称</th><th>大小</th><th>操作</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : `<div class="empty">这个目录下没有内容。</div>`}
+  `;
+
+  stage.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+    const id = Number(b.dataset.go);
+    state.files.parent = id ? id : null;
+    loadFiles().then(render).catch(e => toast(e.message, 3500));
+  });
+  bindFileOps();
+}
+
+function bindFileOps() {
+  stage.querySelectorAll("[data-dl]").forEach(b => b.onclick = () =>
+    downloadFile(Number(b.dataset.dl), b.dataset.nm || ""));
+  stage.querySelectorAll("[data-pv]").forEach(b => b.onclick = () =>
+    previewFile(Number(b.dataset.pv)));
+}
+
+function renderSearch() {
+  const s = state.search;
+  const rows = s.items.map(h => `<li>${postCard({
+    id: h.id, title: h.title, summary: h.summary, coverUrl: h.coverUrl,
+    contentMd: h.content,               // 搜索结果没写摘要时，用正文纯文本提一段
+    publishedAt: h.publishedAt, createdAt: h.createdAt
+  })}</li>`).join("");
+
+  stage.innerHTML = `
+    <div class="sec-head"><h2>搜索</h2><span class="count">${s.q ? `“${esc(s.q)}” · ${s.total} 条` : ""}</span></div>
+    <form class="searchbar" id="searchForm" style="margin-bottom:18px">
+      <input id="q2" type="search" value="${esc(s.q)}" placeholder="输入关键词，回车搜索" autocomplete="off">
+      <button class="btn primary" type="submit">搜索</button>
+    </form>
+    ${s.q ? (s.items.length ? `<ul class="post-list">${rows}</ul>`
+      : `<div class="empty">没有匹配的内容。换个词试试，或先确认文章已发布且公开。</div>`)
+      : `<div class="empty">输入关键词开始搜索。索引里只有已发布的公开文章。</div>`}
+  `;
+  const form = document.getElementById("searchForm");
+  form.onsubmit = e => {
+    e.preventDefault();
+    const q = document.getElementById("q2").value.trim();
+    if (!q) return toast("先输入关键词");
+    location.hash = "#/search/" + encodeURIComponent(q);
+  };
+  fixBrokenCovers(stage);
+}
+
+/* ================= 路由 ================= */
+async function route() {
+  const hash = location.hash.replace(/^#/, "") || "/";
+  const parts = hash.split("/").filter(Boolean);
+  try {
+    if (parts[0] === "post" && parts[1]) {
+      state.view = "article";
+      await loadArticle(parts[1]);
+    } else if (parts[0] === "files" || parts[0] === "dir") {
+      state.view = "files";
+      state.files.parent = parts[0] === "dir" ? Number(parts[1]) : null;
+      await loadFiles();
+    } else if (parts[0] === "search") {
+      state.view = "search";
+      const q = parts[1] ? decodeURIComponent(parts.slice(1).join("/")) : "";
+      if (q) await loadSearch(q); else state.search = { q: "", items: [], total: 0 };
+    } else if (parts[0] === "tag" && parts[1]) {
+      state.view = "posts";
+      state.tag = decodeURIComponent(parts.slice(1).join("/"));
+      await loadPosts();
+    } else {
+      state.view = "posts";
+      state.tag = "";
+      await loadPosts();
+    }
+    render();
+  } catch (e) {
+    toast(e.message, 4000);
+    state.view = "posts";
+    try { await loadPosts(); } catch (_) {}
+    render();
+  }
+}
+
+window.addEventListener("hashchange", route);
+renderAuthBtn();
+route();
+</script>
+</body>
+</html>
