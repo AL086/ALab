@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""打发布包：交叉编译 linux/amd64 二进制，连同 install.sh、README 一起塞进 tar.gz。
+"""打发布包：交叉编译 linux/amd64 二进制，连同 install.sh、README 一起塞进 tar.gz 和 zip。
 
 用法（在项目根执行）：
     python tools/package_release.py
 产物：
     dist/blog-server-linux-amd64.tar.gz
+    dist/blog-server-linux-amd64.zip
+        （zip 里同样保留 unix 权限位：install.sh / blog-server 是 755）
     解压后同层有 blog-server / install.sh / README.md / vendor/（可选离线二进制）
 """
 import hashlib
@@ -13,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,14 +29,29 @@ def run(cmd, env=None):
     subprocess.run(cmd, cwd=ROOT, check=True, env=env, shell=False)
 
 
+def safe_rmtree(path: Path):
+    """Windows 上偶尔有文件被占/只读，删不掉；让步处理，别让打包整个失败。"""
+    if not path.exists():
+        return
+    shutil.rmtree(path, ignore_errors=True)
+    if path.exists():
+        for p in path.rglob("*"):
+            try:
+                os.chmod(p, 0o666)
+            except OSError:
+                pass
+        shutil.rmtree(path, ignore_errors=True)
+    if path.exists():
+        path.rename(path.with_name(path.name + ".old"))
+
+
 def main():
     go = shutil.which("go") or r"C:\Program Files\Go\bin\go.exe"
     if not Path(go).exists() and not shutil.which("go"):
         print("找不到 go，无法交叉编译", file=sys.stderr)
         return 1
 
-    if STAGE.exists():
-        shutil.rmtree(STAGE)
+    safe_rmtree(STAGE)
     STAGE.mkdir(parents=True, exist_ok=True)
 
     env = dict(os.environ,
@@ -93,10 +111,40 @@ def main():
 
     sha = hashlib.sha256(tarball.read_bytes()).hexdigest()
     size = tarball.stat().st_size
-    print(f"\n产物: {tarball}  ({size/1024/1024:.1f} MB)")
-    print(f"sha256: {sha}")
-    print("\n目标机用法：tar -xzf %s.tar.gz && cd %s && sudo ./install.sh"
-          % (NAME, NAME))
+
+    # 再出一份 zip：Windows 上双击就能解，Linux 用 unzip 也能保住 755
+    zpath = OUT_DIR / f"{NAME}.zip"
+    if zpath.exists():
+        zpath.unlink()
+
+    def mode_of(p: Path) -> int:
+        if p.is_dir() or p.name in ("install.sh", "blog-server", "minio", "meilisearch"):
+            return 0o755
+        return 0o644
+
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        for p in sorted(STAGE.rglob("*")):
+            if p.is_dir():
+                continue
+            arc = str(Path(NAME) / p.relative_to(STAGE)).replace("\\", "/")
+            zi = zipfile.ZipInfo.from_file(str(p), arc)
+            # zip 不认 Windows 的 chmod，unix 权限要写进 external_attr，否则解压出来 install.sh 没执行位
+            zi.create_system = 3
+            zi.external_attr = (0o100000 | mode_of(p)) << 16
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            with open(p, "rb") as fh:
+                zf.writestr(zi, fh.read())
+
+    zsha = hashlib.sha256(zpath.read_bytes()).hexdigest()
+    zsize = zpath.stat().st_size
+    print(f"\ntar.gz: {tarball}  ({size/1024/1024:.1f} MB)")
+    print(f"        sha256 {sha}")
+    print(f"zip:    {zpath}  ({zsize/1024/1024:.1f} MB)")
+    print(f"        sha256 {zsha}")
+    print("\n目标机用法：")
+    print("  tar.gz： tar -xzf %s.tar.gz && cd %s && sudo ./install.sh" % (NAME, NAME))
+    print("  zip：    unzip %s.zip && cd %s && sudo ./install.sh" % (NAME, NAME))
+    print("  zip 在 Windows 解压再传上去时：chmod +x install.sh blog-server")
     return 0
 
 

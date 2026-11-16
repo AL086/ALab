@@ -274,13 +274,22 @@ curl -X POST http://127.0.0.1:8080/api/v1/files/upload \
 **拿现成的包（推荐，不用装 Go）**：
 
 ```bash
-wget https://github.com/AL086/ALab/releases/download/v1.0.0/blog-server-linux-amd64.tar.gz
+# tar.gz
+wget https://github.com/AL086/ALab/releases/download/v1.1.0/blog-server-linux-amd64.tar.gz
 tar -xzf blog-server-linux-amd64.tar.gz && cd blog-server-linux-amd64
+
+# 或者 zip（Windows 上直接双击解压也行，Linux 用 unzip）
+wget https://github.com/AL086/ALab/releases/download/v1.1.0/blog-server-linux-amd64.zip
+unzip blog-server-linux-amd64.zip && cd blog-server-linux-amd64
+
 ./install.sh --check          # 只体检，不写任何东西
 sudo ./install.sh             # 装依赖 + 起服务
 ```
 
-Release 页：<https://github.com/AL086/ALab/releases/tag/v1.0.0>
+> 用 **Windows 解压 zip 再传到 Linux** 的话，执行位会丢，先 `chmod +x install.sh blog-server`；
+> 直接在 Linux 上 `unzip` 则不用管（zip 里写的是 755）。
+
+Release 页：<https://github.com/AL086/ALab/releases/latest>
 （同一个 Release 里还有 `sha256.txt` 可以核对）。
 
 ### 需要哪些软件
@@ -344,7 +353,27 @@ sudo ./install.sh
 依赖都自己装好了可以 `sudo SKIP_DEPS=1 ./install.sh`。
 
 可覆盖的变量：`BASE_DIR`（默认 `/opt/kb`）、`APP_PORT`（8080）、`PG_PORT`（5432）、
-`MINIO_PORT`（9000）、`MEILI_PORT`（7700）。
+`MINIO_PORT`（9000）、`MEILI_PORT`（7700）、`SKIP_DEPS`、`FORCE`。
+
+脚本自己会处理的三件麻烦事：
+
+- **端口被占**：`APP_PORT` 被占就自动往后找空闲端口并提示用了哪个（要固定就显式传 `APP_PORT=`）
+- **小内存**：`MemTotal < 1.5GB` 且没 swap 时自动建 1GB `/swapfile` 并写 `fstab`
+  （PostgreSQL + MinIO + Meilisearch 挤在 1GB 会 OOM）
+- **重装不打断线上**：已有 `.env` 时沿用原口令，不重新生成、不改配置，只补齐环境
+
+### 日常运维（升级 / 换端口 / 卸载）
+
+```bash
+sudo ./install.sh --app-only        # 只换二进制并重启，配置/口令/依赖都不动（升级用这个）
+sudo FORCE=1 ./install.sh           # 重装（已有 blog-kb 单元时默认拒绝，FORCE=1 才动）
+sudo APP_PORT=8090 FORCE=1 ./install.sh   # 换端口重装
+sudo ./install.sh --uninstall       # 停并删 blog-kb/minio/meilisearch 单元，数据目录保留
+./install.sh --help                 # 看用法
+```
+
+装完/升级后脚本会自己查一遍 `http://127.0.0.1:<端口>/readyz`，并打印四个服务的 `active` 状态，
+不用你再去 `systemctl` 逐个看。
 
 ### 方式二：手动（理解每一步在干什么）
 

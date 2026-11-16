@@ -26,10 +26,15 @@ API = "https://api.github.com"
 BODY = """\
 ## 解压即装（Linux x86_64）
 
+两种压缩包内容完全一样，按手边工具挑一个：
+
 ```bash
-tar -xzf blog-server-linux-amd64.tar.gz
-cd blog-server-linux-amd64
-./install.sh --check      # 先体检：root / systemd / 端口 / 磁盘
+# tar.gz
+tar -xzf blog-server-linux-amd64.tar.gz && cd blog-server-linux-amd64
+# 或者 zip（Windows 解压再传上去记得 chmod +x install.sh blog-server）
+unzip blog-server-linux-amd64.zip && cd blog-server-linux-amd64
+
+./install.sh --check      # 先体检：root / systemd / 端口 / 磁盘 / 离线二进制
 sudo ./install.sh         # 装 PostgreSQL + MinIO + Meilisearch + 应用
 ```
 
@@ -37,16 +42,26 @@ sudo ./install.sh         # 装 PostgreSQL + MinIO + Meilisearch + 应用
 填数据库 / 对象存储 / 搜索服务的地址、端口、口令，每组点「测试连接」，三项全绿才允许「保存并启动」。
 `install.sh` 已把随机口令写进 `/opt/kb/app/install.env`，向导会自动预填。
 
+## 运维
+
+```bash
+sudo ./install.sh --app-only        # 只升级二进制，配置/口令/依赖都不动
+sudo FORCE=1 ./install.sh           # 重装（已有 .env 时沿用原口令，不打断线上）
+sudo ./install.sh --uninstall       # 删服务，数据目录保留
+./install.sh --help                 # 用法
+```
+
 ## 包里有什么
 
 - `blog-server`：Linux amd64 静态二进制（后端 + 内嵌前端，含初始化向导）
-- `install.sh`：一键安装脚本（含 `--check` 预检；已有 `blog-kb.service` 时拒绝覆盖，需 `FORCE=1`）
+- `install.sh`：一键安装脚本（含 `--check` / `--app-only` / `--uninstall`；
+  已有 `blog-kb.service` 时拒绝覆盖，需 `FORCE=1`；端口被占自动顺延；小内存自动加 swap）
 - `README.md`：依赖清单、两种安装方式、向导字段说明、常见问题
 - `vendor/`：放离线 `minio` / `meilisearch` 二进制的位置（内网机器用）
 
 ## 校验
 
-见 `sha256.txt`（也在本 Release 里）。
+`sha256.txt` 里同时列了 tar.gz 和 zip 的校验值。
 """
 
 
@@ -79,20 +94,31 @@ def api(method, path, body=None, tries=4, raw=None, ctype="application/json"):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tag", default="v1.0.0")
-    ap.add_argument("--file", default=os.path.join("dist", "blog-server-linux-amd64.tar.gz"))
+    ap.add_argument("--tag", default="v1.1.0")
+    ap.add_argument("--file", action="append", default=None,
+                    help="可重复；默认同时传 tar.gz 和 zip")
     args = ap.parse_args()
 
     if not TOKEN:
         raise SystemExit("缺少 GITHUB_TOKEN")
-    if not os.path.isfile(args.file):
-        raise SystemExit("找不到 %s，先跑 python tools/package_release.py" % args.file)
 
-    raw = open(args.file, "rb").read()
-    sha = hashlib.sha256(raw).hexdigest()
-    size = len(raw)
-    name = os.path.basename(args.file)
-    print("包：%s  %.1f MB  sha256=%s" % (name, size / 1048576, sha))
+    files = args.file or [
+        os.path.join("dist", "blog-server-linux-amd64.tar.gz"),
+        os.path.join("dist", "blog-server-linux-amd64.zip"),
+    ]
+    payload = []
+    for f in files:
+        if not os.path.isfile(f):
+            raise SystemExit("找不到 %s，先跑 python tools/package_release.py" % f)
+        raw = open(f, "rb").read()
+        payload.append({
+            "path": f,
+            "name": os.path.basename(f),
+            "raw": raw,
+            "sha": hashlib.sha256(raw).hexdigest(),
+            "size": len(raw),
+        })
+        print("包：%-40s %.1f MB  sha256=%s" % (payload[-1]["name"], len(raw) / 1048576, payload[-1]["sha"]))
 
     st, me = api("GET", "/user")
     print("token 身份：", me.get("login"), st)
@@ -114,17 +140,20 @@ def main():
         print("已建 release", args.tag, "→", rel["html_url"])
 
     # 已传过同名 asset 就先删掉（重跑不加 -1 后缀）
+    want = {p["name"] for p in payload} | {"sha256.txt"}
     for a in rel.get("assets", []):
-        if a["name"] == name:
+        if a["name"] in want:
             api("DELETE", "/repos/%s/%s/releases/assets/%d" % (OWNER, REPO, a["id"]))
-            print("删掉旧 asset", a["id"])
+            print("删掉旧 asset", a["name"], a["id"])
 
-    upload = rel["upload_url"].split("{")[0] + "?name=" + name
-    st, asset = api("POST", upload, raw=raw, ctype="application/gzip")
-    print("已上传 asset：", asset["name"], asset["size"], asset["browser_download_url"])
+    base = rel["upload_url"].split("{")[0]
+    for p in payload:
+        ctype = "application/zip" if p["name"].endswith(".zip") else "application/gzip"
+        st, asset = api("POST", base + "?name=" + p["name"], raw=p["raw"], ctype=ctype)
+        print("已上传：", asset["name"], asset["size"], asset["browser_download_url"])
 
-    st, txt = api("POST", rel["upload_url"].split("{")[0] + "?name=sha256.txt",
-                  raw=(sha + "  " + name + "\n").encode(), ctype="text/plain")
+    sums = "".join("%s  %s\n" % (p["sha"], p["name"]) for p in payload)
+    api("POST", base + "?name=sha256.txt", raw=sums.encode(), ctype="text/plain")
     print("已上传 sha256.txt")
     print("Release：", rel["html_url"])
     return 0
